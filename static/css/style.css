@@ -1,0 +1,160 @@
+@import url('sidebar.css');
+
+:root {
+    --primary-color: #007bff;
+    /* Sporty Blue */
+    --secondary-color: #f8f9fa;
+    --dark-color: #212529;
+    --text-color: #333;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.navbar-brand {
+    font-family: 'Exo 2', sans-serif;
+}
+
+.divider {
+    width: 60px;
+    height: 4px;
+    border-radius: 2px;
+}
+
+/* Navbar */
+.navbar-brand {
+    letter-spacing: 1px;
+}
+
+.nav-link {
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+}
+
+/* Product Card */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+}
+
+/* Category Card */
+.category-card {
+    height: 200px;
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover {
+    transform: scale(1.02);
+}
+
+.category-card img {
+    height: 100%;
+    object-fit: cover;
+}
+
+.category-overlay {
+    transition: background-color 0.3s ease;
+}
+
+.category-card:hover .category-overlay {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Footer */
+footer a.hover-light:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Custom Utilities */
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* Custom Animations */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.hover-scale {
+    transition: transform 0.3s ease;
+}
+
+
+/* Horizontal Scroll Utility */
+.scrolling-wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px;
+    gap: 1.5rem;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.scrolling-wrapper::-webkit-scrollbar {
+    display: none;
+    /* Safari/Chrome */
+}
+
+.scrolling-card {
+    flex: 0 0 auto;
+    width: 280px;
+    /* Fixed width for cards */
+}

@@ -1,0 +1,88 @@
+{% extends "layout.html" %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Categories Top Section -->
+    <div class="mb-5">
+        <h2 class="fw-bold text-uppercase text-center mb-4">Shop By Category</h2>
+        <div class="row g-3 justify-content-center">
+            <div class="col-6 col-md-3 col-lg-2">
+                <a href="{{ url_for('products') }}"
+                    class="card text-center text-decoration-none h-100 border-0 shadow-sm hover-lift {% if not request.args.get('category') %}bg-primary text-white{% else %}bg-light text-dark{% endif %}">
+                    <div class="card-body py-3">
+                        <i class="fas fa-th-large fs-4 mb-2"></i>
+                        <h6 class="card-title mb-0 small fw-bold">All Products</h6>
+                    </div>
+                </a>
+            </div>
+            {% for category in categories %}
+            <div class="col-6 col-md-3 col-lg-2">
+                <a href="{{ url_for('products', category=category.category_id) }}"
+                    class="card text-center text-decoration-none h-100 border-0 shadow-sm hover-lift {% if request.args.get('category')|int == category.category_id %}bg-primary text-white{% else %}bg-light text-dark{% endif %}">
+                    <div class="card-body py-3">
+                        <i class="fas fa-tag fs-4 mb-2"></i>
+                        <h6 class="card-title mb-0 small fw-bold">{{ category.name }}</h6>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="fw-bold text-uppercase mb-4">
+                {% if request.args.get('category') %}
+                {% for category in categories %}
+                {% if category.category_id == request.args.get('category')|int %}
+                {{ category.name }}
+                {% endif %}
+                {% endfor %}
+                {% else %}
+                All Products
+                {% endif %}
+            </h3>
+
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-md-4 col-lg-3 col-sm-6" data-aos="fade-up">
+                    <div class="card h-100 product-card border-0 shadow-sm hover-lift">
+                        <div class="position-relative">
+                            {% if product.stock_quantity == 0 %}
+                            <span class="badge bg-secondary position-absolute top-0 end-0 m-2">Out of Stock</span>
+                            <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50"></div>
+                            {% endif %}
+                            <img src="{{ url_for('static', filename='products/' + product.image_url) }}"
+                                class="card-img-top" alt="{{ product.name }}"
+                                onerror="handleImageError(this, '{{ product.name }}')">
+                        </div>
+                        <div class="card-body">
+                            <small class="text-muted text-uppercase fw-bold">{{ product.brand }}</small>
+                            <h5 class="card-title fw-bold mt-1 text-truncate">{{ product.name }}</h5>
+                            <p class="small text-muted mb-2">{{ product.description[:60] }}...</p>
+                            <p class="card-text text-primary fw-bold fs-5">₹{{ product.price }}</p>
+                        </div>
+                        <div class="card-footer bg-white border-0 pb-3">
+                            <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                                class="btn {% if product.stock_quantity == 0 %}btn-secondary disabled{% else %}btn-outline-dark{% endif %} w-100 rounded-pill">
+                                {% if product.stock_quantity == 0 %}Out of Stock{% else %}View Details{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-5">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2748/2748558.png" alt="No Data" width="100"
+                        class="mb-3 opacity-50">
+                    <p class="text-muted fs-5">No products found in this category.</p>
+                    <a href="{{ url_for('products') }}" class="btn btn-primary rounded-pill">View All Products</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

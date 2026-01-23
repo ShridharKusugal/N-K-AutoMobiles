@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="fw-bold text-uppercase mb-4">Your Cart</h2>
+
+
+
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Product</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col" class="text-center">Quantity</th>
+                                    <th scope="col" class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ url_for('static', filename='products/' + item.image_url) }}"
+                                                class="img-fluid rounded me-3"
+                                                style="width: 60px; height: 60px; object-fit: cover;"
+                                                onerror="handleImageError(this, '{{ item.name }}')">
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ item.name }}</h6>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>₹{{ item.price }}</td>
+                                    <td class="text-center">
+                                        <form action="{{ url_for('update_cart', product_id=item.product_id) }}"
+                                            method="POST" class="d-inline-flex">
+                                            <div class="input-group input-group-sm" style="width: 120px;">
+                                                <button type="submit" name="action" value="decrease"
+                                                    class="btn btn-outline-secondary">-</button>
+                                                <input type="text" name="quantity" value="{{ item.quantity }}"
+                                                    class="form-control text-center" readonly>
+                                                <button type="submit" name="action" value="increase"
+                                                    class="btn btn-outline-secondary">+</button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        ₹{{ item.total_price }}
+                                        <form action="{{ url_for('remove_from_cart', product_id=item.product_id) }}"
+                                            method="POST" class="mt-2">
+                                            <button type="submit"
+                                                class="btn btn-sm text-danger border-0 bg-transparent p-0">
+                                                <i class="fas fa-trash me-1"></i>Remove
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('products') }}" class="btn btn-outline-secondary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-4">Order Summary</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span class="fw-bold">₹{{ grand_total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span>Shipping</span>
+                        <span class="text-success">Free</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="fs-5 fw-bold">Total</span>
+                        <span class="fs-5 fw-bold text-primary">₹{{ grand_total }}</span>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg rounded-pill">
+                            Proceed to Checkout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+            <h3>Your cart is empty</h3>
+            <p class="text-muted">Looks like you haven't added anything to your cart yet.</p>
+            <a href="{{ url_for('products') }}" class="btn btn-primary rounded-pill px-4">Start Shopping</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

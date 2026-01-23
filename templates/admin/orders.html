@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+
+{% block title %}Admin - Orders{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-shopping-bag me-2"></i>Order Management</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('admin_orders') }}"
+                    class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+                <a href="{{ url_for('admin_orders', status='Pending') }}"
+                    class="btn {% if status_filter == 'Pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">Pending</a>
+                <a href="{{ url_for('admin_orders', status='Confirmed') }}"
+                    class="btn {% if status_filter == 'Confirmed' %}btn-info{% else %}btn-outline-info{% endif %}">Confirmed</a>
+                <a href="{{ url_for('admin_orders', status='Shipped') }}"
+                    class="btn {% if status_filter == 'Shipped' %}btn-primary{% else %}btn-outline-primary{% endif %}">Shipped</a>
+                <a href="{{ url_for('admin_orders', status='Delivered') }}"
+                    class="btn {% if status_filter == 'Delivered' %}btn-success{% else %}btn-outline-success{% endif %}">Delivered</a>
+                <a href="{{ url_for('admin_orders', status='Cancelled') }}"
+                    class="btn {% if status_filter == 'Cancelled' %}btn-danger{% else %}btn-outline-danger{% endif %}">Cancelled</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td><strong>#{{ order.order_id }}</strong></td>
+                        <td>
+                            <div>{{ order.username }}</div>
+                            <small class="text-muted">{{ order.email }}</small>
+                        </td>
+                        <td>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else 'N/A' }}</td>
+                        <td class="fw-bold text-success">₹{{ order.total_amount }}</td>
+                        <td>
+                            {% if order.status == 'Pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif order.status == 'Confirmed' %}
+                            <span class="badge bg-info">Confirmed</span>
+                            {% elif order.status == 'Shipped' %}
+                            <span class="badge bg-primary">Shipped</span>
+                            {% elif order.status == 'Delivered' %}
+                            <span class="badge bg-success">Delivered</span>
+                            {% elif order.status == 'Cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin_order_detail', order_id=order.order_id) }}"
+                                    class="btn btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown" title="Update Status">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <form
+                                            action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
+                                            method="POST">
+                                            <button type="submit" name="status" value="Pending" class="dropdown-item">
+                                                <i class="fas fa-clock text-warning me-2"></i>Pending
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form
+                                            action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
+                                            method="POST">
+                                            <button type="submit" name="status" value="Confirmed" class="dropdown-item">
+                                                <i class="fas fa-check text-info me-2"></i>Confirmed
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form
+                                            action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
+                                            method="POST">
+                                            <button type="submit" name="status" value="Shipped" class="dropdown-item">
+                                                <i class="fas fa-truck text-primary me-2"></i>Shipped
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form
+                                            action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
+                                            method="POST">
+                                            <button type="submit" name="status" value="Delivered" class="dropdown-item">
+                                                <i class="fas fa-check-circle text-success me-2"></i>Delivered
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <form
+                                            action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
+                                            method="POST">
+                                            <button type="submit" name="status" value="Cancelled"
+                                                class="dropdown-item text-danger">
+                                                <i class="fas fa-times-circle me-2"></i>Cancelled
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No orders found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

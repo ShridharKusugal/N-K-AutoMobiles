@@ -1,0 +1,145 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<header class="hero-section text-center text-white d-flex align-items-center justify-content-center"
+    style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1558981403-c5f9899a28bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80'); background-size: cover; background-position: center; height: 70vh;">
+    <div class="container" data-aos="fade-up">
+        <h1 class="display-3 fw-bold text-uppercase mb-3"><span class="text-primary">NK</span> AUTOMOBILES</h1>
+        <p class="lead mb-4">Quality Bike Spares at Best Price. Your one-stop shop for all two-wheeler needs.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('products') }}"
+                class="btn btn-primary btn-lg rounded-pill px-5 fw-bold hover-scale">Shop Now</a>
+            <a href="{{ url_for('contact') }}"
+                class="btn btn-outline-light btn-lg rounded-pill px-5 fw-bold hover-scale">Contact
+                Us</a>
+        </div>
+    </div>
+</header>
+
+<!-- Categories Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-uppercase">Shop By Category</h2>
+            <div class="divider mx-auto bg-primary"></div>
+        </div>
+        <div class="row g-4">
+            <!-- Example Categories -->
+            <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="category-card position-relative overflow-hidden rounded shadow-sm hover-lift">
+                    <img src="{{ url_for('static', filename='images/engine_parts.jpg') }}" class="img-fluid w-100"
+                        alt="Engine Parts">
+                    <div
+                        class="category-overlay d-flex align-items-center justify-content-center bg-dark bg-opacity-50 position-absolute top-0 start-0 w-100 h-100">
+                        <h3 class="text-white fw-bold text-uppercase">Engine Parts</h3>
+                    </div>
+                    <a href="{{ url_for('products', category=1) }}" class="stretched-link"></a>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="category-card position-relative overflow-hidden rounded shadow-sm hover-lift">
+                    <img src="{{ url_for('static', filename='images/brake_parts.jpg') }}" class="img-fluid w-100"
+                        alt="Brake Parts">
+                    <div
+                        class="category-overlay d-flex align-items-center justify-content-center bg-dark bg-opacity-50 position-absolute top-0 start-0 w-100 h-100">
+                        <h3 class="text-white fw-bold text-uppercase">Brake Parts</h3>
+                    </div>
+                    <a href="{{ url_for('products', category=2) }}" class="stretched-link"></a>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="category-card position-relative overflow-hidden rounded shadow-sm hover-lift">
+                    <img src="{{ url_for('static', filename='images/accessories.png') }}" class="img-fluid w-100"
+                        alt="Accessories">
+                    <div
+                        class="category-overlay d-flex align-items-center justify-content-center bg-dark bg-opacity-50 position-absolute top-0 start-0 w-100 h-100">
+                        <h3 class="text-white fw-bold text-uppercase">Accessories</h3>
+                    </div>
+                    <a href="{{ url_for('products', category=7) }}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-uppercase">Featured Products</h2>
+            <div class="divider mx-auto bg-primary"></div>
+        </div>
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-md-4 col-lg-3 col-sm-6" data-aos="fade-up">
+                <div class="card h-100 product-card border-0 shadow-sm hover-lift">
+                    <div class="position-relative">
+                        {% if product.stock_quantity == 0 %}
+                        <span class="badge bg-secondary position-absolute top-0 end-0 m-2">Out of Stock</span>
+                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50"></div>
+                        {% else %}
+                        <span class="badge bg-danger position-absolute top-0 start-0 m-2">New</span>
+                        {% endif %}
+                        <img src="{{ url_for('static', filename='products/' + product.image_url) }}"
+                            class="card-img-top" alt="{{ product.name }}"
+                            onerror="handleImageError(this, '{{ product.name }}')">
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted text-uppercase fw-bold">{{ product.brand }}</small>
+                        <h5 class="card-title fw-bold mt-1 text-truncate">{{ product.name }}</h5>
+                        <p class="small text-muted mb-2">{{ product.description[:60] }}...</p>
+                        <p class="card-text text-primary fw-bold fs-5">₹{{ product.price }}</p>
+                    </div>
+                    <div class="card-footer bg-white border-0 pb-3">
+                        <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                            class="btn {% if product.stock_quantity == 0 %}btn-secondary disabled{% else %}btn-outline-dark{% endif %} w-100 rounded-pill">
+                            {% if product.stock_quantity == 0 %}Out of Stock{% else %}View Details{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center">
+                <p class="text-muted">No featured products available at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-5">
+            <a href="{{ url_for('products') }}" class="btn btn-primary px-5 rounded-pill">View All Products</a>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="p-4">
+                    <i class="fas fa-check-circle fa-3x text-primary mb-3"></i>
+                    <h4 class="fw-bold">Genuine Parts</h4>
+                    <p class="text-muted">We only sell 100% original and high-quality spare parts for all major bike
+                        brands.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4">
+                    <i class="fas fa-tags fa-3x text-primary mb-3"></i>
+                    <h4 class="fw-bold">Best Prices</h4>
+                    <p class="text-muted">Get the best market rates for both retail and wholesale purchases.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4">
+                    <i class="fas fa-shipping-fast fa-3x text-primary mb-3"></i>
+                    <h4 class="fw-bold">Fast Service</h4>
+                    <p class="text-muted">Quick response and reliable service for all your automotive needs.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

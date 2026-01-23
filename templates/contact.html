@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-uppercase">Get In Touch</h2>
+        <div class="divider mx-auto bg-primary"></div>
+        <p class="text-muted mt-3">Have questions about a part? Need a wholesale quote? Reach out to us!</p>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-5">
+            <div class="card bg-dark text-white shadow h-100 border-0">
+                <div class="card-body p-4 p-lg-5">
+                    <h3 class="fw-bold mb-4">Contact Info</h3>
+
+                    <div class="d-flex mb-4">
+                        <div class="me-3">
+                            <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold">Address</h5>
+                            <p class="text-white-50">Kamripeth, Old Hubli,<br>Hubli, Karnataka 580024,<br>India</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-4">
+                        <div class="me-3">
+                            <i class="fas fa-phone-alt fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold">Phone</h5>
+                            <p class="text-white-50">+91 9880423662</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-4">
+                        <div class="me-3">
+                            <i class="fas fa-envelope fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold">Email</h5>
+                            <p class="text-white-50">quadriraibag@gmail.com</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5">
+                        <h5 class="fw-bold mb-3">Connect With Us</h5>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i
+                                class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="https://wa.me/919880423662" class="btn btn-outline-light btn-sm rounded-circle"><i
+                                class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4 p-lg-5">
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label fw-bold">Your Name</label>
+                                <input type="text" class="form-control bg-light" id="name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label fw-bold">Email Address</label>
+                                <input type="email" class="form-control bg-light" id="email" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="subject" class="form-label fw-bold">Subject</label>
+                                <input type="text" class="form-control bg-light" id="subject" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="message" class="form-label fw-bold">Message</label>
+                                <textarea class="form-control bg-light" id="message" rows="5" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">Send
+                                    Message</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

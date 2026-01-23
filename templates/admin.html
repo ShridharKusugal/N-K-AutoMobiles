@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-uppercase">Admin Dashboard</h2>
+        <div>
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-success rounded-pill me-2"><i
+                    class="fas fa-shopping-bag me-2"></i>Orders</a>
+            <a href="{{ url_for('admin_products') }}" class="btn btn-primary rounded-pill me-2"><i
+                    class="fas fa-box me-2"></i>Products</a>
+            <a href="{{ url_for('admin_categories') }}" class="btn btn-info rounded-pill me-2 text-white"><i
+                    class="fas fa-tags me-2"></i>Categories</a>
+            <a href="{{ url_for('admin_users') }}" class="btn btn-warning rounded-pill"><i
+                    class="fas fa-users me-2"></i>Users</a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Products</h5>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <h2 class="display-4 fw-bold mb-0">{{ stats.products }}</h2>
+                        <i class="fas fa-box fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <h2 class="display-4 fw-bold mb-0">{{ stats.orders }}</h2>
+                        <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Users</h5>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <h2 class="display-4 fw-bold mb-0">{{ stats.users }}</h2>
+                        <i class="fas fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Low Stock</h5>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <h2 class="display-4 fw-bold mb-0">{{ stats.low_stock }}</h2>
+                        <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Products Table (Main Content) -->
+    <div class="card shadow border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">Recent Products</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th scope="col" class="ps-4">ID</th>
+                            <th scope="col">Product Name</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Stock</th>
+                            <th scope="col" class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in recent_products %}
+                        <tr>
+                            <td class="ps-4">#{{ product.product_id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='products/' + product.image_url) }}"
+                                        class="rounded me-2" alt="" width="40"
+                                        onerror="this.src='https://placehold.co/40?text=P'">
+                                    <span class="fw-bold">{{ product.name }}</span>
+                                </div>
+                            </td>
+                            <td>{{ product.category_name }}</td>
+                            <td>₹{{ product.price }}</td>
+                            <td>
+                                {% if product.stock_quantity < 10 %} <span class="badge bg-warning text-dark">{{
+                                    product.stock_quantity }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ product.stock_quantity }}</span>
+                                    {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('admin_edit_product', product_id=product.product_id) }}"
+                                    class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></a>
+                                <form action="{{ url_for('admin_delete_product', product_id=product.product_id) }}"
+                                    method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i
+                                            class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">No products found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white text-center py-3">
+            <a href="{{ url_for('admin_products') }}" class="text-decoration-none fw-bold">View All Products</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
