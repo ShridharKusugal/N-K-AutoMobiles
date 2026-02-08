@@ -1,30 +1,178 @@
 {% extends "layout.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login - NK Automobiles{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow border-0">
-                <div class="card-body p-5">
-                    <h3 class="card-title text-center fw-bold text-uppercase mb-4">Login</h3>
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email address</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+<style>
+    /* Scoped styles for login page */
+    .login-section {
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+        url("{{ url_for('static', filename='images/engine_parts.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        border-radius: 20px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .login-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .form-control {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 10px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border-bottom: 3px solid #0d6efd;
+        /* Primary Color */
+        transform: scale(1.02);
+    }
+
+    .btn-login {
+        background: linear-gradient(45deg, #0d6efd, #0043a8);
+        border: none;
+        padding: 12px;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .btn-login::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #0043a8, #0d6efd);
+        transition: left 0.3s ease;
+        z-index: -1;
+    }
+
+    .btn-login:hover::before {
+        left: 0;
+    }
+
+    .btn-login:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 20px rgba(13, 110, 253, 0.4);
+    }
+
+    .input-group-text {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 10px 0 0 10px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-title {
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        letter-spacing: 2px;
+    }
+
+    /* Animation Delays */
+    .delay-100 {
+        animation-delay: 100ms;
+    }
+
+    .delay-200 {
+        animation-delay: 200ms;
+    }
+
+    .delay-300 {
+        animation-delay: 300ms;
+    }
+</style>
+
+<div class="login-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card login-card p-4 mx-auto" data-aos="zoom-in-up" data-aos-duration="1000">
+                    <div class="card-body">
+                        <div class="text-center mb-4" data-aos="fade-down" data-aos-delay="200">
+                            <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-lg"
+                                style="width: 70px; height: 70px;">
+                                <i class="fas fa-user-circle fa-2x text-white"></i>
+                            </div>
+                            <h3 class="card-title fw-bold text-uppercase login-title">Welcome Back</h3>
+                            <p class="text-white-50 small">Please login to your account</p>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary rounded-pill fw-bold">Login</button>
-                        </div>
-                    </form>
-                    <div class="text-center mt-4">
-                        <p class="small text-muted">Don't have an account? <a href="{{ url_for('register') }}"
-                                class="text-primary fw-bold text-decoration-none">Register here</a></p>
+
+                        <form method="POST">
+                            <div class="mb-4" data-aos="fade-up" data-aos-delay="300">
+                                <label for="email" class="form-label ms-1">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope text-primary"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                        placeholder="Ex: john@example.com"
+                                        style="text-transform: lowercase; border-radius: 0 10px 10px 0;"
+                                        oninput="this.value = this.value.toLowerCase()" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4" data-aos="fade-up" data-aos-delay="400">
+                                <label for="password" class="form-label ms-1">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock text-primary"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password"
+                                        placeholder="Enter your password" style="border-radius: 0 10px 10px 0;"
+                                        required>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mb-3" data-aos="fade-up" data-aos-delay="500">
+                                <button type="submit"
+                                    class="btn btn-primary btn-login text-white rounded-pill fw-bold text-uppercase shadow-sm">
+                                    Login <i class="fas fa-sign-in-alt ms-2"></i>
+                                </button>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4" data-aos="fade-up"
+                                data-aos-delay="600">
+                                <a href="{{ url_for('forgot_password') }}"
+                                    class="small text-white text-decoration-none hover-underline">
+                                    <i class="fas fa-key me-1"></i> Forgot Password?
+                                </a>
+                                <span class="text-white-50">|</span>
+                                <a href="{{ url_for('register') }}"
+                                    class="small text-white fw-bold text-decoration-none hover-scale">
+                                    Register New Account <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

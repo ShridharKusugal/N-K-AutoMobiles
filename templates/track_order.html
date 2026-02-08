@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block title %}Track Your Order{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Track Your Order</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('track_order') }}">
+                        <div class="mb-3">
+                            <label for="order_id" class="form-label">Order ID</label>
+                            <input type="number" class="form-control" id="order_id" name="order_id" required
+                                placeholder="e.g. 101">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email_or_phone" class="form-label">Email or Phone Number</label>
+                            <input type="text" class="form-control" id="email_or_phone" name="email_or_phone" required
+                                placeholder="Email or Phone used for order">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Track Order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if order %}
+    <div class="mt-5">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Order Status: {{ order.status }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Order Details</h5>
+                        <p><strong>Order ID:</strong> #{{ order.order_id }}</p>
+                        <p><strong>Date:</strong> {{ order.created_at }}</p>
+                        <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
+                        <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Tracking Information</h5>
+                        {% if order.tracking_number %}
+                        <p><strong>Courier:</strong> {{ order.courier_name }}</p>
+                        <p><strong>Tracking Number:</strong> {{ order.tracking_number }}</p>
+                        {% else %}
+                        <p class="text-muted">Tracking information not yet available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+                <h5>Items</h5>
+                <ul class="list-group list-group-flush">
+                    {% for item in items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ item.name }}</strong> (x{{ item.quantity }})
+                        </div>
+                        <span>₹{{ item.price }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

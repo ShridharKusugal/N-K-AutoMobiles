@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+
+{% block title %}Contact Inquiries{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+                    <li class="breadcrumb-item active">Contact Messages</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-uppercase mb-0">Contact Inquiries</h2>
+        </div>
+    </div>
+
+    <!-- Messages Table -->
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>From</th>
+                            <th>Subject</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for msg in messages %}
+                        <tr class="{% if msg.status == 'New' %}table-active fw-bold{% endif %}">
+                            <td class="ps-4 small text-muted text-nowrap">
+                                {{ msg.created_at.strftime('%d %b, %H:%M') if msg.created_at else 'N/A' }}
+                            </td>
+                            <td>
+                                <div>{{ msg.name }}</div>
+                                <div class="small text-muted"><a href="mailto:{{ msg.email }}">{{ msg.email }}</a></div>
+                            </td>
+                            <td>{{ msg.subject }}</td>
+                            <td class="small" style="max-width: 300px;">
+                                <div class="text-truncate" title="{{ msg.message }}">
+                                    {{ msg.message }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if msg.status == 'New' %}
+                                <span class="badge bg-primary">New</span>
+                                {% elif msg.status == 'Read' %}
+                                <span class="badge bg-secondary">Read</span>
+                                {% elif msg.status == 'Replied' %}
+                                <span class="badge bg-success">Replied</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                        data-bs-toggle="dropdown">
+                                        Action
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                                        <li>
+                                            <form
+                                                action="{{ url_for('admin_update_message_status', message_id=msg.message_id) }}"
+                                                method="POST">
+                                                <input type="hidden" name="status" value="Read">
+                                                <button type="submit" class="dropdown-item"><i
+                                                        class="fas fa-envelope-open me-2"></i>Mark as Read</button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form
+                                                action="{{ url_for('admin_update_message_status', message_id=msg.message_id) }}"
+                                                method="POST">
+                                                <input type="hidden" name="status" value="Replied">
+                                                <button type="submit" class="dropdown-item"><i
+                                                        class="fas fa-reply me-2"></i>Mark as Replied</button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <form
+                                                action="{{ url_for('admin_delete_message', message_id=msg.message_id) }}"
+                                                method="POST" onsubmit="return confirm('Are you sure?');">
+                                                <button type="submit" class="dropdown-item text-danger"><i
+                                                        class="fas fa-trash me-2"></i>Delete</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary ms-1" data-bs-toggle="modal"
+                                    data-bs-target="#msgModal{{ msg.message_id }}">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="msgModal{{ msg.message_id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ msg.subject }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body font-weight-normal">
+                                        <p><strong>From:</strong> {{ msg.name }} &lt;{{ msg.email }}&gt;</p>
+                                        <p><strong>Date:</strong> {{ msg.created_at }}</p>
+                                        <hr>
+                                        <p class="text-break" style="white-space: pre-wrap;">{{ msg.message }}</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a href="mailto:{{ msg.email }}?subject=Re: {{ msg.subject }}"
+                                            class="btn btn-primary"><i class="fas fa-reply me-1"></i> Reply via
+                                            Email</a>
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <p class="text-muted">No messages found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

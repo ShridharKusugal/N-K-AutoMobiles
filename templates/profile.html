@@ -3,86 +3,457 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-user-circle fa-5x text-secondary"></i>
+<div class="profile-section py-5">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <!-- Sidebar -->
+            <div class="col-lg-4 animate-in">
+                <div class="glass-card h-100 border-0">
+                    <div class="profile-cover"></div>
+                    <div class="profile-wrapper text-center">
+                        <div class="profile-avatar-box">
+                            <img src="https://ui-avatars.com/api/?name={{ user.full_name or user.username }}&background=0D8ABC&color=fff&size=256"
+                                alt="Profile">
+                            <div class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-2"
+                                title="Active"></div>
+                        </div>
+                        <h4 class="fw-bold mt-3 mb-1">{{ user.full_name or user.username }}</h4>
+                        <!-- Role Badge -->
+                        <span class="badge bg-primary bg-opacity-10 text-primary mb-2 px-3 rounded-pill">{{
+                            user.role|capitalize }}</span>
+
+                        <p class="text-muted small mt-2 mb-3">
+                            <i class="fas fa-envelope me-2 text-primary"></i>{{ user.email }}
+                        </p>
                     </div>
-                    <h4 class="fw-bold">{{ user.username }}</h4>
-                    <span class="badge bg-primary mb-3">{{ user.role|capitalize }}</span>
-                    <p class="text-muted mb-4">{{ user.email }}</p>
-                    <hr>
-                    <div class="text-start">
-                        <p class="mb-1"><i class="fas fa-phone-alt me-2 text-primary"></i> <strong>Phone:</strong> {{
-                            user.phone or 'Not set' }}</p>
-                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2 text-primary"></i>
-                            <strong>Address:</strong> {{ user.address or 'Not set' }}</p>
-                        <p class="mb-1"><i class="fas fa-calendar-alt me-2 text-primary"></i> <strong>Joined:</strong>
-                            {{ user.created_at.strftime('%d %b, %Y') }}</p>
+
+                    <div class="p-4 pt-0">
+                        <hr class="my-4 opacity-10">
+                        <div class="nav flex-column nav-pills nav-pills-custom" id="v-pills-tab" role="tablist"
+                            aria-orientation="vertical">
+                            <button class="nav-link active" id="v-pills-overview-tab" data-bs-toggle="pill"
+                                data-bs-target="#v-pills-overview" type="button" role="tab">
+                                <i class="fas fa-chart-pie"></i> Overview
+                            </button>
+                            <button class="nav-link" id="v-pills-orders-tab" data-bs-toggle="pill"
+                                data-bs-target="#v-pills-orders" type="button" role="tab">
+                                <i class="fas fa-shopping-bag"></i> My Orders
+                            </button>
+                            <button class="nav-link" id="v-pills-settings-tab" data-bs-toggle="pill"
+                                data-bs-target="#v-pills-settings" type="button" role="tab">
+                                <i class="fas fa-user-cog"></i> Settings
+                            </button>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-top text-center text-muted small">
+                            Member since {{ user.created_at.strftime('%B %Y') }}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom-0 py-3">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary me-2"></i>Order History</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Order ID</th>
-                                    <th>Date</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th class="text-end pe-4">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+
+            <!-- Content -->
+            <div class="col-lg-8 animate-in delay-1">
+                <div class="tab-content" id="v-pills-tabContent">
+
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="v-pills-overview" role="tabpanel">
+                        <div class="row g-4 mb-4">
+                            <!-- Stats -->
+                            <div class="col-sm-6">
+                                <div class="glass-card stat-card p-4 h-100">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 bg-primary bg-opacity-10 text-primary p-3 rounded-circle"
+                                            style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-shopping-cart fa-lg"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h2 class="mb-0 fw-bold">{{ orders|default([])|length }}</h2>
+                                            <p class="text-muted mb-0">Total Orders</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="glass-card stat-card p-4 h-100">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 bg-success bg-opacity-10 text-success p-3 rounded-circle"
+                                            style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-receipt fa-lg"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            {% set total_spent = orders|default([])|sum(attribute='total_amount') %}
+                                            <h2 class="mb-0 fw-bold">₹{{ total_spent }}</h2>
+                                            <p class="text-muted mb-0">Total Spent</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Address Summary -->
+                        <div class="glass-card p-4">
+                            <h5 class="fw-bold mb-4 border-bottom pb-2"><i
+                                    class="fas fa-map-marker-alt text-primary me-2"></i>Primary Address</h5>
+                            {% if user.address_line1 %}
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="fw-bold">{{ user.full_name }}</h6>
+                                    <p class="text-muted mb-1">{{ user.address_line1 }}, {{ user.address_line2 }}</p>
+                                    <p class="text-muted mb-1">{{ user.city }}, {{ user.state }} - <strong>{{
+                                            user.pincode }}</strong></p>
+                                    <p class="mb-0 mt-2"><i class="fas fa-phone-alt mobile-icon me-2 text-primary"></i>
+                                        {{ user.phone }}</p>
+                                </div>
+                                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                        onclick="document.getElementById('v-pills-settings-tab').click()">
+                                        <i class="fas fa-pen me-1"></i> Edit Address
+                                    </button>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4 text-muted border border-dashed rounded bg-light">
+                                <i class="fas fa-map-marked-alt fa-3x mb-3 opacity-25"></i>
+                                <p>No address details found.</p>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                    onclick="document.getElementById('v-pills-settings-tab').click()">Add
+                                    Address</button>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Recent Activity / Info -->
+                        <div class="glass-card p-4 mt-4">
+                            <h5 class="fw-bold mb-3 border-bottom pb-2"><i
+                                    class="fas fa-info-circle text-primary me-2"></i>Account Status</h5>
+                            <p class="text-muted mb-0">
+                                Your account is <strong>active</strong>. You have placed <strong class="text-primary">{{
+                                    orders|default([])|length }}</strong> orders to date.
                                 {% if orders %}
-                                {% for order in orders %}
-                                <tr>
-                                    <td class="ps-4 fw-bold">#{{ order.order_id }}</td>
-                                    <td>{{ order.created_at.strftime('%d %b, %Y') }}</td>
-                                    <td>₹{{ order.total_amount }}</td>
-                                    <td>
-                                        {% if order.status == 'Pending' %}
-                                        <span class="badge bg-warning text-dark">Pending</span>
-                                        {% elif order.status == 'Confirmed' %}
-                                        <span class="badge bg-info text-dark">Confirmed</span>
-                                        {% elif order.status == 'Shipped' %}
-                                        <span class="badge bg-primary">Shipped</span>
-                                        {% elif order.status == 'Delivered' %}
-                                        <span class="badge bg-success">Delivered</span>
-                                        {% elif order.status == 'Cancelled' %}
-                                        <span class="badge bg-danger">Cancelled</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <a href="{{ url_for('order_confirmation', order_id=order.order_id) }}"
-                                            class="btn btn-sm btn-outline-primary rounded-pill">View Details</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="fas fa-shopping-bag fa-3x mb-3 d-block text-secondary opacity-50"></i>
-                                        You haven't placed any orders yet.
-                                    </td>
-                                </tr>
+                                Your last order was on <strong>{{ orders[0].created_at.strftime('%b %d, %Y')
+                                    }}</strong>.
                                 {% endif %}
-                            </tbody>
-                        </table>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Orders Tab -->
+                    <div class="tab-pane fade" id="v-pills-orders" role="tabpanel">
+                        <div class="glass-card p-4">
+                            <h5 class="fw-bold mb-4"><i class="fas fa-history text-primary me-2"></i>Order History</h5>
+                            {% if orders %}
+                            <div class="order-list">
+                                {% for order in orders %}
+                                <div class="glass-card mb-4 border-0 order-card-hover position-relative overflow-hidden"
+                                    data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                                    <!-- Status Bar Gradient -->
+                                    <div class="position-absolute top-0 start-0 bottom-0"
+                                        style="width: 5px; background: {% if order.status == 'Delivered' %}linear-gradient(to bottom, #198754, #28a745){% elif order.status == 'Cancelled' %}#dc3545{% elif order.status == 'Confirmed' %}#0dcaf0{% else %}#ffc107{% endif %};">
+                                    </div>
+
+                                    <div class="p-4 ms-2">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span
+                                                        class="badge bg-dark text-white shadow-sm px-3 rounded-pill">#{{
+                                                        order.order_id }}</span>
+                                                    <span class="text-muted small"><i
+                                                            class="far fa-calendar-alt me-1"></i> {{
+                                                        order.created_at.strftime('%d %b, %Y') }}</span>
+                                                </div>
+                                                <h6 class="mb-0 text-muted small fw-bold text-uppercase">Items: {{
+                                                    order.order_items|length }}</h6>
+                                            </div>
+                                            <div class="text-end">
+                                                {% if order.status == 'Pending' %}
+                                                <span
+                                                    class="badge bg-soft-warning text-warning border border-warning rounded-pill px-3 py-2 animate-pulse-soft"><i
+                                                        class="fas fa-clock me-1"></i> Pending</span>
+                                                {% elif order.status == 'Confirmed' %}
+                                                <span
+                                                    class="badge bg-soft-info text-info border border-info rounded-pill px-3 py-2"><i
+                                                        class="fas fa-check-circle me-1"></i> Confirmed</span>
+                                                {% elif order.status == 'Shipped' %}
+                                                <span
+                                                    class="badge bg-soft-primary text-primary border border-primary rounded-pill px-3 py-2"><i
+                                                        class="fas fa-truck me-1"></i> Shipped</span>
+                                                {% elif order.status == 'Delivered' %}
+                                                <span
+                                                    class="badge bg-soft-success text-success border border-success rounded-pill px-3 py-2"><i
+                                                        class="fas fa-box-open me-1"></i> Delivered</span>
+                                                {% elif order.status == 'Cancelled' %}
+                                                <span
+                                                    class="badge bg-soft-danger text-danger border border-danger rounded-pill px-3 py-2"><i
+                                                        class="fas fa-times me-1"></i> Cancelled</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Item Preview with Hover Zoom -->
+                                        <div
+                                            class="order-items-preview d-flex gap-3 mb-4 overflow-auto pb-2 scrollbar-hidden">
+                                            {% for item in order.order_items %}
+                                            <div class="position-relative item-thumb" title="{{ item.name }}">
+                                                <div class="thumb-container rounded-3 border bg-white shadow-sm overflow-hidden"
+                                                    style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; padding: 5px;">
+                                                    <img src="{{ url_for('static', filename='products/' + item.image_url) }}"
+                                                        class="img-fluid" style="max-height: 100%; object-fit: contain;"
+                                                        onerror="this.src='https://placehold.co/70?text=Parts'">
+                                                </div>
+                                                <span
+                                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                                                    style="font-size: 0.65rem;">
+                                                    {{ item.quantity }}
+                                                </span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+
+                                        <!-- Simplified Tracking Bar -->
+                                        {% if order.status != 'Cancelled' %}
+                                        <div class="order-tracking-mini mb-4">
+                                            <div class="progress"
+                                                style="height: 6px; background-color: #f0f0f0; overflow: visible; border-radius: 10px;">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated {% if order.status == 'Delivered' %}bg-success{% elif order.status == 'Shipped' %}bg-primary{% else %}bg-info{% endif %}"
+                                                    role="progressbar"
+                                                    style="width: {% if order.status == 'Pending' %}25%{% elif order.status == 'Confirmed' %}50%{% elif order.status == 'Shipped' %}75%{% elif order.status == 'Delivered' %}100%{% endif %}; border-radius: 10px;">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between mt-2 small text-muted">
+                                                <span
+                                                    class="{% if order.status in ['Pending', 'Confirmed', 'Shipped', 'Delivered'] %}fw-bold text-dark{% endif %}">Placed</span>
+                                                <span
+                                                    class="{% if order.status in ['Confirmed', 'Shipped', 'Delivered'] %}fw-bold text-dark{% endif %}">Packing</span>
+                                                <span
+                                                    class="{% if order.status in ['Shipped', 'Delivered'] %}fw-bold text-dark{% endif %}">On
+                                                    Road</span>
+                                                <span
+                                                    class="{% if order.status == 'Delivered' %}fw-bold text-success{% endif %}">Arrival</span>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        <div
+                                            class="d-flex justify-content-between align-items-center bg-light p-3 rounded-4">
+                                            <div>
+                                                <p class="text-muted small mb-0">Order Total</p>
+                                                <h4 class="fw-bold mb-0 text-dark">₹{{ order.total_amount }}</h4>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                {% if order.status == 'Pending' %}
+                                                <form action="{{ url_for('cancel_order', order_id=order.order_id) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Are you sure you want to cancel this order?')">
+                                                    <button type="submit"
+                                                        class="btn btn-outline-danger rounded-pill px-3 shadow-sm hover-lift fw-bold">
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                                <a href="{{ url_for('order_confirmation', order_id=order.order_id) }}"
+                                                    class="btn btn-primary rounded-pill px-4 shadow-sm hover-lift fw-bold">
+                                                    Manage <i class="fas fa-external-link-alt ms-2"
+                                                        style="font-size: 0.8rem;"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fas fa-shopping-basket fa-4x text-muted opacity-25"></i>
+                                </div>
+                                <h5 class="text-muted">No orders yet</h5>
+                                <p class="text-muted small">Looks like you haven't bought anything yet.</p>
+                                <a href="{{ url_for('home') }}"
+                                    class="btn btn-primary rounded-pill mt-3 px-4 shadow-sm">Start Shopping</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab (Form) -->
+                    <div class="tab-pane fade" id="v-pills-settings" role="tabpanel">
+                        <div class="glass-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                                <h5 class="fw-bold mb-0"><i class="fas fa-user-edit text-primary me-2"></i>Edit Profile
+                                </h5>
+                            </div>
+
+                            <form id="profileForm" action="{{ url_for('profile') }}" method="POST">
+                                <div class="row g-3">
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label small text-muted fw-bold text-uppercase">Full
+                                            Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i
+                                                    class="fas fa-user text-muted"></i></span>
+                                            <input type="text" class="form-control form-control-custom border-start-0"
+                                                name="full_name" value="{{ user.full_name or '' }}"
+                                                placeholder="Enter your name">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label small text-muted fw-bold text-uppercase">Phone
+                                            Number</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i
+                                                    class="fas fa-phone text-muted"></i></span>
+                                            <input type="text" class="form-control form-control-custom border-start-0"
+                                                name="phone" value="{{ user.phone or '' }}"
+                                                placeholder="Enter 10-digit number">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 mt-4">
+                                        <h6 class="fw-bold text-primary mb-3"><i
+                                                class="fas fa-map-marked me-2"></i>Shipping
+                                            Address</h6>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted fw-bold text-uppercase">Address Line
+                                            1</label>
+                                        <input type="text" class="form-control form-control-custom" name="address_line1"
+                                            value="{{ user.address_line1 or '' }}"
+                                            placeholder="Flat, House no., Building, Apartment">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted fw-bold text-uppercase">Address Line
+                                            2</label>
+                                        <input type="text" class="form-control form-control-custom" name="address_line2"
+                                            value="{{ user.address_line2 or '' }}"
+                                            placeholder="Area, Colony, Street, Landmark">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-muted fw-bold text-uppercase">City</label>
+                                        <input type="text" class="form-control form-control-custom" name="city"
+                                            value="{{ user.city or '' }}" placeholder="City">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-muted fw-bold text-uppercase">State</label>
+                                        <input type="text" class="form-control form-control-custom" name="state"
+                                            value="{{ user.state or '' }}" placeholder="State">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label
+                                            class="form-label small text-muted fw-bold text-uppercase">Pincode</label>
+                                        <input type="text" class="form-control form-control-custom" name="pincode"
+                                            value="{{ user.pincode or '' }}" placeholder="Zip Code">
+                                    </div>
+
+                                    <div class="col-12 mt-4 text-end">
+                                        <button type="submit"
+                                            class="btn btn-primary rounded-pill px-5 py-2 shadow-lg hover-lift">
+                                            <i class="fas fa-check me-2"></i>Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Page Specific Overrides */
+    .bg-soft-warning {
+        background-color: rgba(255, 193, 7, 0.15) !important;
+        color: #856404 !important;
+    }
+
+    .bg-soft-info {
+        background-color: rgba(13, 202, 240, 0.15) !important;
+        color: #0c5460 !important;
+    }
+
+    .bg-soft-primary {
+        background-color: rgba(13, 110, 253, 0.15) !important;
+        color: #004085 !important;
+    }
+
+    .bg-soft-success {
+        background-color: rgba(25, 135, 84, 0.15) !important;
+        color: #155724 !important;
+    }
+
+    .bg-soft-danger {
+        background-color: rgba(220, 53, 69, 0.15) !important;
+        color: #721c24 !important;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Order Interactive Enhancements */
+    .order-card-hover {
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .order-card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
+        background: #fff !important;
+    }
+
+    .order-card-hover:hover .item-thumb {
+        transform: scale(1.1);
+    }
+
+    .item-thumb {
+        transition: transform 0.3s ease;
+    }
+
+    .animate-pulse-soft {
+        animation: pulse-soft 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-soft {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .scrollbar-hidden::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hidden {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .order-tracking-mini .progress-bar {
+        transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    .thumb-container {
+        transition: all 0.3s ease;
+    }
+
+    .item-thumb:hover .thumb-container {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    }
+</style>
 {% endblock %}

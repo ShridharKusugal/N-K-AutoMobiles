@@ -25,7 +25,7 @@
                             </thead>
                             <tbody>
                                 {% for item in cart_items %}
-                                <tr>
+                                <tr data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <img src="{{ url_for('static', filename='products/' + item.image_url) }}"

@@ -24,6 +24,18 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
         <div class="container">
+            <div class="d-none d-md-flex gap-2 me-3 align-items-center">
+                <button
+                    class="btn btn-sm btn-outline-secondary text-white-50 border-0 rounded-circle nav-arrow-btn nav-arrow-btn-back"
+                    title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button
+                    class="btn btn-sm btn-outline-secondary text-white-50 border-0 rounded-circle nav-arrow-btn nav-arrow-btn-forward"
+                    title="Go Forward">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
             <a class="navbar-brand fw-bold fst-italic text-uppercase" href="{{ url_for('home') }}">
                 <i class="fas fa-motorcycle me-2 text-primary"></i>NK AUTOMOBILES
             </a>
@@ -35,7 +47,10 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('products') }}">Products</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About Us</a></li>
+                    {% if session.role != 'admin' %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('contact') }}">Contact</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('track_order') }}">Track Order</a></li>
                 </ul>
                 <ul class="navbar-nav ms-3 border-start ps-3 align-items-center">
                     {% if session.user_id %}
@@ -43,7 +58,13 @@
                     <li class="nav-item"><a class="nav-link text-warning"
                             href="{{ url_for('admin_dashboard') }}">Admin</a></li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('wishlist') }}" title="My Wishlist">
+                            <i class="far fa-heart"></i>
+                        </a>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">My Profile</a></li>
+                    {% if session.role != 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link position-relative" href="{{ url_for('cart') }}">
                             <i class="fas fa-shopping-cart"></i>
@@ -52,6 +73,7 @@
                                 style="font-size: 0.6rem;">{{ cart_count }}</span>
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item"><a class="btn btn-sm btn-outline-primary ms-2"
                             href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
@@ -100,18 +122,33 @@
                                 class="text-decoration-none text-white-50 hover-light">Home</a></li>
                         <li><a href="{{ url_for('products') }}"
                                 class="text-decoration-none text-white-50 hover-light">Products</a></li>
+                        {% if session.role != 'admin' %}
                         <li><a href="{{ url_for('contact') }}"
                                 class="text-decoration-none text-white-50 hover-light">Contact Us</a></li>
+                        {% endif %}
+                        <li><a href="{{ url_for('track_order') }}"
+                                class="text-decoration-none text-white-50 hover-light">Track Order</a></li>
                         <li><a href="#" class="text-decoration-none text-white-50 hover-light">Privacy Policy</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
                     <h5 class="text-uppercase fw-bold mb-3">Contact Info</h5>
                     <ul class="list-unstyled text-white-50 small">
-                        <li class="mb-2"><i class="fas fa-map-marker-alt text-primary me-2"></i> Kamripeth, Old Hubli,
-                            Karnataka 580024</li>
-                        <li class="mb-2"><i class="fas fa-envelope text-primary me-2"></i> quadriraibag@gmail.com</li>
-                        <li class="mb-2"><i class="fas fa-phone text-primary me-2"></i> +91 9880423662</li>
+                        <li class="mb-2">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                            <a href="https://www.google.com/maps/search/?api=1&query=Kamripeth,+Old+Hubli,+Karnataka+580024"
+                                target="_blank" class="text-white-50 text-decoration-none">Kamripeth, Old Hubli,
+                                Karnataka 580024</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            <a href="mailto:quadriraibag@gmail.com"
+                                class="text-white-50 text-decoration-none">quadriraibag@gmail.com</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone text-primary me-2"></i>
+                            <a href="tel:+919880423662" class="text-white-50 text-decoration-none">+91 9880423662</a>
+                        </li>
                     </ul>
                 </div>
             </div>

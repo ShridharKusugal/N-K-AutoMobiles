@@ -6,15 +6,19 @@
 <!-- Hero Section -->
 <header class="hero-section text-center text-white d-flex align-items-center justify-content-center"
     style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1558981403-c5f9899a28bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80'); background-size: cover; background-position: center; height: 70vh;">
-    <div class="container" data-aos="fade-up">
-        <h1 class="display-3 fw-bold text-uppercase mb-3"><span class="text-primary">NK</span> AUTOMOBILES</h1>
-        <p class="lead mb-4">Quality Bike Spares at Best Price. Your one-stop shop for all two-wheeler needs.</p>
-        <div class="d-flex justify-content-center gap-3">
+    <div class="container">
+        <h1 class="display-3 fw-bold text-uppercase mb-3" data-aos="fade-down" data-aos-duration="1000"><span
+                class="text-primary">NK</span> AUTOMOBILES</h1>
+        <p class="lead mb-4" data-aos="fade-up" data-aos-delay="200">Quality Bike Spares at Best Price. Your one-stop
+            shop for all two-wheeler needs.</p>
+        <div class="d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="400">
             <a href="{{ url_for('products') }}"
                 class="btn btn-primary btn-lg rounded-pill px-5 fw-bold hover-scale">Shop Now</a>
+            {% if session.role != 'admin' %}
             <a href="{{ url_for('contact') }}"
                 class="btn btn-outline-light btn-lg rounded-pill px-5 fw-bold hover-scale">Contact
                 Us</a>
+            {% endif %}
         </div>
     </div>
 </header>
@@ -72,32 +76,68 @@
             <h2 class="fw-bold text-uppercase">Featured Products</h2>
             <div class="divider mx-auto bg-primary"></div>
         </div>
-        <div class="row g-4">
+        <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
             {% for product in products %}
-            <div class="col-md-4 col-lg-3 col-sm-6" data-aos="fade-up">
-                <div class="card h-100 product-card border-0 shadow-sm hover-lift">
-                    <div class="position-relative">
+            <div class="col" data-aos="fade-up">
+                <div class="card h-100 product-card shadow-sm">
+                    <div class="card-img-wrapper">
                         {% if product.stock_quantity == 0 %}
-                        <span class="badge bg-secondary position-absolute top-0 end-0 m-2">Out of Stock</span>
-                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50"></div>
+                        <span class="badge bg-secondary position-absolute top-0 end-0 m-2 badge-stock">Out of
+                            Stock</span>
+                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50 z-1"></div>
                         {% else %}
-                        <span class="badge bg-danger position-absolute top-0 start-0 m-2">New</span>
+                        <span
+                            class="badge badge-sporty bg-danger position-absolute top-0 start-0 m-2 badge-stock">NEW</span>
                         {% endif %}
+
                         <img src="{{ url_for('static', filename='products/' + product.image_url) }}"
                             class="card-img-top" alt="{{ product.name }}"
                             onerror="handleImageError(this, '{{ product.name }}')">
+
+                        <!-- Wishlist Button -->
+                        <form action="{{ url_for('toggle_wishlist', product_id=product.product_id) }}" method="POST"
+                            class="position-absolute top-0 end-0 m-2" style="z-index: 5;">
+                            <button type="submit"
+                                class="btn btn-sm btn-light rounded-circle shadow-sm text-danger border-0 d-flex align-items-center justify-content-center"
+                                style="width: 32px; height: 32px;">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </form>
+
+                        <div class="hover-action">
+                            <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                                class="btn btn-primary w-100 rounded-0 py-2 small fw-bold text-uppercase"
+                                style="letter-spacing: 0.5px; font-size: 0.8rem;">
+                                <i class="far fa-eye me-1"></i> Quick View
+                            </a>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <small class="text-muted text-uppercase fw-bold">{{ product.brand }}</small>
-                        <h5 class="card-title fw-bold mt-1 text-truncate">{{ product.name }}</h5>
-                        <p class="small text-muted mb-2">{{ product.description[:60] }}...</p>
-                        <p class="card-text text-primary fw-bold fs-5">₹{{ product.price }}</p>
-                    </div>
-                    <div class="card-footer bg-white border-0 pb-3">
-                        <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
-                            class="btn {% if product.stock_quantity == 0 %}btn-secondary disabled{% else %}btn-outline-dark{% endif %} w-100 rounded-pill">
-                            {% if product.stock_quantity == 0 %}Out of Stock{% else %}View Details{% endif %}
-                        </a>
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted text-uppercase fw-bold"
+                                style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ product.brand }}</small>
+                            <div class="rating-stars">
+                                <i class="fas fa-star"></i> <small class="text-dark fw-bold">4.5</small>
+                            </div>
+                        </div>
+
+                        <h6 class="card-title fw-bold text-truncate mb-auto" style="font-size: 0.95rem;">
+                            <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                                class="text-decoration-none text-dark stretched-link">{{ product.name }}</a>
+                        </h6>
+
+                        <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
+                            <h5 class="text-primary fw-bold mb-0">₹{{ product.price }}</h5>
+                            <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST"
+                                class="position-relative" style="z-index: 2;">
+                                <button type="submit"
+                                    class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center transition-all hover-scale"
+                                    style="width: 36px; height: 36px;" data-bs-toggle="tooltip" title="Add to Cart" {%
+                                    if product.stock_quantity==0 %}disabled{% endif %}>
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>

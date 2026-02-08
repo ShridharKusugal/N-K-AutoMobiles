@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block title %}My Wishlist{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="fw-bold text-uppercase mb-0"><i class="fas fa-heart text-danger me-2"></i>My Wishlist</h2>
+        <a href="{{ url_for('products') }}" class="btn btn-outline-primary rounded-pill">Continue Shopping</a>
+    </div>
+
+    {% if items %}
+    <div class="row g-4">
+        {% for product in items %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card h-100 product-card shadow-sm">
+                <div class="card-img-wrapper">
+                    {% if product.stock_quantity == 0 %}
+                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2 badge-stock">Out of Stock</span>
+                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50 z-1"></div>
+                    {% endif %}
+
+                    <a href="{{ url_for('product_detail', product_id=product.product_id) }}">
+                        <img src="{{ url_for('static', filename='products/' + product.image_url) }}"
+                            class="card-img-top" alt="{{ product.name }}"
+                            onerror="handleImageError(this, '{{ product.name }}')">
+                    </a>
+
+                    <!-- Remove Button -->
+                    <form action="{{ url_for('toggle_wishlist', product_id=product.product_id) }}" method="POST"
+                        class="position-absolute top-0 end-0 m-2" style="z-index: 10;">
+                        <button type="submit"
+                            class="btn btn-sm btn-light rounded-circle shadow-sm text-danger border-0 d-flex align-items-center justify-content-center"
+                            title="Remove from wishlist" style="width: 32px; height: 32px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+
+                    <div class="hover-action">
+                        <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST">
+                            <button type="submit"
+                                class="btn btn-primary w-100 rounded-0 py-2 small fw-bold text-uppercase" {% if
+                                product.stock_quantity==0 %}disabled{% endif %}
+                                style="letter-spacing: 0.5px; font-size: 0.8rem;">
+                                <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card-body p-3 d-flex flex-column">
+                    <small class="text-muted text-uppercase fw-bold mb-2"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ product.brand or 'Genuine Parts'
+                        }}</small>
+                    <h6 class="card-title fw-bold text-truncate mb-auto" style="font-size: 0.95rem;">
+                        <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                            class="text-decoration-none text-dark">{{ product.name }}</a>
+                    </h6>
+                    <div class="mt-3 pt-3 border-top">
+                        <h5 class="text-primary fw-bold mb-0">₹{{ product.price }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="far fa-heart fa-5x text-muted opacity-25"></i>
+        </div>
+        <h3 class="text-muted">Your wishlist is empty</h3>
+        <p class="text-muted mb-4">Save items you like in your wishlist to find them easily later.</p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg rounded-pill px-5">Explore Products</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

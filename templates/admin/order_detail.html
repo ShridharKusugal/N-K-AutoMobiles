@@ -6,9 +6,15 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold"><i class="fas fa-receipt me-2"></i>Order #{{ order.order_id }}</h2>
-        <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i>Back to Orders
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_order_invoice', order_id=order.order_id) }}" class="btn btn-primary"
+                target="_blank">
+                <i class="fas fa-file-invoice me-1"></i>Generate Invoice
+            </a>
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Orders
+            </a>
+        </div>
     </div>
 
     <div class="row g-4">
@@ -81,14 +87,38 @@
                         <div class="d-grid gap-2">
                             <form action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
                                 method="POST" class="d-inline">
-                                <select name="status" class="form-select mb-2" onchange="this.form.submit()">
-                                    <option value="">-- Select Status --</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Confirmed">Confirmed</option>
-                                    <option value="Shipped">Shipped</option>
-                                    <option value="Delivered">Delivered</option>
-                                    <option value="Cancelled">Cancelled</option>
+
+                                <div class="mb-3 text-start">
+                                    <label class="form-label text-start">Tracking Details</label>
+                                    <input type="text" name="courier_name" class="form-control mb-2"
+                                        placeholder="Courier Name (e.g. FedEx)"
+                                        value="{{ order.courier_name if order.courier_name else '' }}">
+                                    <input type="text" name="tracking_number" class="form-control mb-2"
+                                        placeholder="Tracking Number"
+                                        value="{{ order.tracking_number if order.tracking_number else '' }}">
+                                </div>
+
+                                <label class="form-label text-start">Status</label>
+                                <select name="status" class="form-select mb-2">
+                                    <option value="Pending" {% if order.status=='Pending' %}selected{% endif %}>Pending
+                                    </option>
+                                    <option value="Confirmed" {% if order.status=='Confirmed' %}selected{% endif %}>
+                                        Confirmed</option>
+                                    <option value="Shipped" {% if order.status=='Shipped' %}selected{% endif %}>Shipped
+                                    </option>
+                                    <option value="Delivered" {% if order.status=='Delivered' %}selected{% endif %}>
+                                        Delivered</option>
+                                    <option value="Cancelled" {% if order.status=='Cancelled' %}selected{% endif %}>
+                                        Cancelled</option>
                                 </select>
+                                <button type="submit" class="btn btn-primary w-100 mb-2">Update Order</button>
+
+                                {% if order.phone_number %}
+                                <a href="https://wa.me/91{{ order.phone_number }}?text=Hi {{ order.full_name }}, your order %23{{ order.order_id }} is now {{ order.status }}. {% if order.tracking_number %}Tracking: {{ order.courier_name }} - {{ order.tracking_number }}{% endif %} Thanks, NK Automobiles."
+                                    target="_blank" class="btn btn-outline-success w-100">
+                                    <i class="fab fa-whatsapp me-2"></i>Notify via WhatsApp
+                                </a>
+                                {% endif %}
                             </form>
                         </div>
                     </div>

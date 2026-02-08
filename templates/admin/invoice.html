@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ order.order_id }} - NK Automobiles</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @media print {
+            .btn-print {
+                display: none;
+            }
+
+            body {
+                background-color: white !important;
+            }
+
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+            }
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        .invoice-card {
+            max-width: 850px;
+            margin: 40px auto;
+            border: none;
+            border-radius: 12px;
+        }
+
+        .invoice-header {
+            background: #0d6efd;
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 40px;
+        }
+
+        .invoice-body {
+            padding: 40px;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .brand-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-style: italic;
+            letter-spacing: -1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container text-center py-4 btn-print">
+        <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill px-5">
+            <i class="fas fa-print me-2"></i>Print Invoice
+        </button>
+        <a href="{{ url_for('admin_order_detail', order_id=order.order_id) }}"
+            class="btn btn-light btn-lg rounded-pill px-4 ms-2">Back to Details</a>
+    </div>
+
+    <div class="card invoice-card shadow-sm">
+        <div class="invoice-header d-flex justify-content-between align-items-center">
+            <div>
+                <div class="brand-logo mb-1">NK AUTOMOBILES</div>
+                <p class="mb-0 small opacity-75">Premium Bike Spare Parts & Accessories</p>
+            </div>
+            <div class="text-end">
+                <h2 class="fw-bold mb-0">INVOICE</h2>
+                <p class="mb-0 small opacity-75">Order #{{ order.order_id }}</p>
+            </div>
+        </div>
+
+        <div class="invoice-body">
+            <div class="row mb-5">
+                <div class="col-6">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Billed To</h6>
+                    <div class="fw-bold fs-5">{{ order.full_name }}</div>
+                    <div class="text-muted">{{ order.address_line1 }}</div>
+                    <div class="text-muted">{{ order.address_line2 }}</div>
+                    <div class="text-muted">{{ order.city }}, {{ order.state }} - {{ order.pincode }}</div>
+                    <div class="text-muted mt-2"><i class="fas fa-phone me-2"></i>{{ order.phone_number }}</div>
+                </div>
+                <div class="col-6 text-end">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Invoice Details</h6>
+                    <div><strong>Date:</strong> {{ order.created_at.strftime('%d %b %Y') if order.created_at else 'N/A'
+                        }}</div>
+                    <div><strong>Payment:</strong> {{ order.payment_method }}</div>
+                    {% if order.transaction_id %}
+                    <div><strong>Trans ID:</strong> {{ order.transaction_id }}</div>
+                    {% endif %}
+                    <div class="mt-2">
+                        <span
+                            class="badge {% if order.status == 'Delivered' %}bg-success{% else %}bg-primary{% endif %} rounded-pill px-3">
+                            {{ order.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-borderless align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-0">Description</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end pe-0">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr class="border-bottom">
+                            <td class="ps-0 py-3">
+                                <div class="fw-bold">{{ item.name }}</div>
+                                <small class="text-muted">Item ID: #{{ item.product_id }}</small>
+                            </td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">₹{{ item.price }}</td>
+                            <td class="text-end pe-0 fw-bold">₹{{ item.price * item.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row justify-content-end mt-4">
+                <div class="col-lg-5">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted ps-0">Subtotal</td>
+                            <td class="text-end pe-0">₹{{ subtotal }}</td>
+                        </tr>
+                        {% if order.discount_amount > 0 %}
+                        <tr>
+                            <td class="text-success ps-0">Discount</td>
+                            <td class="text-end pe-0 text-success">- ₹{{ order.discount_amount }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="total-row fs-5 border-top border-2">
+                            <td class="ps-0 py-3">Grand Total</td>
+                            <td class="text-end pe-0 py-3 text-primary">₹{{ order.total_amount }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5 pt-5 border-top">
+                <div class="row align-items-center">
+                    <div class="col-7">
+                        <p class="small text-muted mb-0"><strong>Note:</strong> This is a computer-generated invoice and
+                            does not require a signature. For any queries, please contact NK Automobiles support at
+                            8317470034.</p>
+                    </div>
+                    <div class="col-5 text-end">
+                        <p class="brand-logo text-primary mb-0 opacity-25">THANK YOU</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,29 +1,43 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+
+{% block title %}Admin - {% if category %}Edit{% else %}Add{% endif %} Category{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">{% if category %}Edit{% else %}Add{% endif %} Category</h3>
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-header bg-primary text-white p-4 rounded-top-4">
+                    <h4 class="fw-bold mb-0">
+                        <i class="fas {% if category %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i>
+                        {% if category %}Edit Category #{{ category.category_id }}{% else %}Add New Category{% endif %}
+                    </h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4 p-lg-5">
                     <form method="POST">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Category Name</label>
-                            <input type="text" class="form-control" id="name" name="name"
-                                value="{{ category.name if category else '' }}" required>
+                        <div class="mb-4">
+                            <label for="name" class="form-label fw-bold">Category Name</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" id="name"
+                                name="name" value="{{ category.name if category else '' }}" required
+                                placeholder="e.g. Engine Parts">
                         </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description"
-                                rows="3">{{ category.description if category else '' }}</textarea>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">Description</label>
+                            <textarea class="form-control bg-light border-0" id="description" name="description"
+                                rows="4"
+                                placeholder="Brief description of parts in this category">{{ category.description if category else '' }}</textarea>
                         </div>
+
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">{% if category %}Update{% else %}Create{%
-                                endif %} Category</button>
-                            <a href="{{ url_for('admin_categories') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm py-3">
+                                <i class="fas fa-save me-2"></i>{% if category %}Update{% else %}Save{% endif %}
+                                Category
+                            </button>
+                            <a href="{{ url_for('admin_categories') }}"
+                                class="btn btn-link text-muted text-decoration-none">
+                                Cancel & Go Back
+                            </a>
                         </div>
                     </form>
                 </div>

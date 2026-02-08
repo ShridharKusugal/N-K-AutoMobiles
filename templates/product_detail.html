@@ -47,6 +47,18 @@
                 {% endif %}
             </div>
 
+            {% if session.role == 'admin' %}
+            <div class="mb-4">
+                <a href="{{ url_for('admin_edit_product', product_id=product.product_id) }}"
+                    class="btn btn-warning btn-lg rounded-pill px-5 shadow-sm">
+                    <i class="fas fa-edit me-2"></i>Edit Product
+                </a>
+                <a href="{{ url_for('admin_products') }}"
+                    class="btn btn-outline-secondary btn-lg rounded-pill px-4 ms-2">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+            {% else %}
             <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}" method="POST" class="mb-4">
                 <div class="row g-3 align-items-center">
                     <div class="col-auto">
@@ -81,17 +93,27 @@
                         class="btn btn-success btn-lg rounded-pill px-4 hover-scale">
                         <i class="fab fa-whatsapp me-2"></i>Buy via WhatsApp
                     </a>
+
+                    <form action="{{ url_for('toggle_wishlist', product_id=product.product_id) }}" method="POST"
+                        class="d-inline">
+                        <button type="submit" class="btn btn-outline-danger btn-lg rounded-pill px-4 hover-scale">
+                            <i class="far fa-heart me-2"></i>Wishlist
+                        </button>
+                    </form>
                 </div>
             </form>
+            {% endif %}
 
             <div class="card bg-light border-0 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title fw-bold"><i class="fas fa-shipping-fast text-primary me-2"></i>Delivery Info
                     </h5>
-                    <p class="card-text small text-muted mb-0">Delivery available across Hubli & Karnataka. <a
-                            href="{{ url_for('contact') }}" class="text-primary text-decoration-none fw-bold">Contact
-                            us</a>
-                        for shipping rates.</p>
+                    <p class="card-text small text-muted mb-0">Delivery available across Hubli & Karnataka.
+                        {% if session.role != 'admin' %}
+                        <a href="{{ url_for('contact') }}" class="text-primary text-decoration-none fw-bold">Contact
+                            us</a> for shipping rates.
+                        {% endif %}
+                    </p>
                 </div>
             </div>
 
@@ -260,27 +282,53 @@
                 <div class="scrolling-wrapper">
                     {% for product in related_products %}
                     <div class="scrolling-card">
-                        <div class="card h-100 product-card border-0 shadow-sm hover-lift">
-                            <div class="position-relative">
+                        <div class="card h-100 product-card shadow-sm" style="width: 280px;">
+                            <div class="card-img-wrapper">
                                 {% if product.stock_quantity == 0 %}
-                                <span class="badge bg-secondary position-absolute top-0 end-0 m-2">Out of Stock</span>
-                                <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50"></div>
+                                <span class="badge bg-secondary position-absolute top-0 end-0 m-2 badge-stock">Out of
+                                    Stock</span>
+                                <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-50 z-1"></div>
                                 {% endif %}
+
                                 <img src="{{ url_for('static', filename='products/' + product.image_url) }}"
                                     class="card-img-top" alt="{{ product.name }}"
-                                    onerror="handleImageError(this, '{{ product.name }}')"
-                                    style="height: 200px; object-fit: cover;">
+                                    onerror="handleImageError(this, '{{ product.name }}')">
+
+                                <div class="hover-action">
+                                    <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                                        class="btn btn-primary w-100 rounded-0 py-2 small fw-bold text-uppercase"
+                                        style="letter-spacing: 0.5px; font-size: 0.8rem;">
+                                        <i class="far fa-eye me-1"></i> Quick View
+                                    </a>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <small class="text-muted text-uppercase fw-bold">{{ product.brand or 'Generic'
-                                    }}</small>
-                                <h5 class="card-title fw-bold mt-1 text-truncate">{{ product.name }}</h5>
-                                <p class="small text-muted mb-2">{{ product.description[:60] }}...</p>
-                                <p class="card-text text-primary fw-bold fs-5">₹{{ product.price }}</p>
-                            </div>
-                            <div class="card-footer bg-white border-0 pb-3">
-                                <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
-                                    class="btn btn-outline-dark w-100 rounded-pill">View Details</a>
+                            <div class="card-body p-3 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted text-uppercase fw-bold"
+                                        style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ product.brand or 'Generic'
+                                        }}</small>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i> <small class="text-dark fw-bold">4.5</small>
+                                    </div>
+                                </div>
+
+                                <h6 class="card-title fw-bold text-truncate mb-auto" style="font-size: 0.95rem;">
+                                    <a href="{{ url_for('product_detail', product_id=product.product_id) }}"
+                                        class="text-decoration-none text-dark stretched-link">{{ product.name }}</a>
+                                </h6>
+
+                                <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
+                                    <h5 class="text-primary fw-bold mb-0">₹{{ product.price }}</h5>
+                                    <form action="{{ url_for('add_to_cart', product_id=product.product_id) }}"
+                                        method="POST" class="position-relative" style="z-index: 2;">
+                                        <button type="submit"
+                                            class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center transition-all hover-scale"
+                                            style="width: 36px; height: 36px;" data-bs-toggle="tooltip"
+                                            title="Add to Cart" {% if product.stock_quantity==0 %}disabled{% endif %}>
+                                            <i class="fas fa-cart-plus"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>

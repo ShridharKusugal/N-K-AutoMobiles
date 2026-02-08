@@ -8,8 +8,15 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('customer', 'admin') DEFAULT 'customer',
+    full_name VARCHAR(100),
     phone VARCHAR(15),
-    address TEXT,
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pincode VARCHAR(20),
+    reset_token VARCHAR(255),
+    reset_token_expiry DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -28,6 +35,7 @@ CREATE TABLE IF NOT EXISTS products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
+    specifications TEXT,
     price DECIMAL(10, 2) NOT NULL,
     stock_quantity INT DEFAULT 0,
     category_id INT,
@@ -57,7 +65,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
 );
 
 -- Review Media Table
@@ -91,8 +99,11 @@ CREATE TABLE IF NOT EXISTS orders (
     state VARCHAR(100),
     pincode VARCHAR(20),
     total_amount DECIMAL(10, 2),
-    payment_method ENUM('COD') DEFAULT 'COD',
-    status ENUM('Pending', 'Confirmed', 'Delivered', 'Cancelled') DEFAULT 'Pending',
+    payment_method ENUM('COD', 'UPI', 'Card') DEFAULT 'COD',
+    transaction_id VARCHAR(255),
+    status ENUM('Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled') DEFAULT 'Pending',
+    tracking_number VARCHAR(100),
+    courier_name VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
@@ -130,3 +141,14 @@ INSERT INTO products (name, description, price, stock_quantity, category_id, bra
 ('ktm Duke 200 Indicator', 'LED Indicator for KTM Duke', 450.00, 60, 3, 'KTM', 'default.jpg'),
 ('Apache RTR 160 Mirror Set', 'Rear View Mirrors for Apache RTR 160', 550.00, 40, 4, 'TVS', 'default.jpg'),
 ('Fazer V2 Front Mudguard', 'Red color front mudguard for Yamaha Fazer', 850.00, 10, 4, 'Yamaha', 'default.jpg');
+
+-- Contact Messages Table
+CREATE TABLE IF NOT EXISTS contact_messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    subject VARCHAR(200),
+    message TEXT NOT NULL,
+    status ENUM('New', 'Read', 'Replied') DEFAULT 'New',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

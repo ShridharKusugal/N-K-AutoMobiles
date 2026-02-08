@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+
+{% block title %}System Logs & Communication{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+                    <li class="breadcrumb-item active">Logs</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-uppercase mb-0">System & Communication Logs</h2>
+        </div>
+        <div class="btn-group rounded-pill overflow-hidden shadow-sm">
+            <a href="{{ url_for('admin_logs') }}"
+                class="btn btn-outline-primary px-3 {% if not type %}active{% endif %}">All</a>
+            <a href="{{ url_for('admin_logs', type='Email') }}"
+                class="btn btn-outline-primary px-3 {% if type == 'Email' %}active{% endif %}">Emails</a>
+            <a href="{{ url_for('admin_logs', type='Activity') }}"
+                class="btn btn-outline-primary px-3 {% if type == 'Activity' %}active{% endif %}">Activity</a>
+            <a href="{{ url_for('admin_logs', type='Error') }}"
+                class="btn btn-outline-primary px-3 {% if type == 'Error' %}active{% endif %}">Errors</a>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-4">Time</th>
+                            <th>Type</th>
+                            <th>Subject / Action</th>
+                            <th>Details</th>
+                            <th class="pe-4">User/Recipient</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr
+                            class="{% if log.type == 'Error' %}table-danger{% elif log.type == 'Security' %}table-warning{% endif %}">
+                            <td class="ps-4 small text-muted">
+                                {{ log.created_at.strftime('%d %b, %H:%M') if log.created_at else 'N/A' }}
+                            </td>
+                            <td>
+                                {% if log.type == 'Email' %}
+                                <span class="badge bg-info"><i class="fas fa-envelope me-1"></i>Email</span>
+                                {% elif log.type == 'Activity' %}
+                                <span class="badge bg-success"><i class="fas fa-bolt me-1"></i>Activity</span>
+                                {% elif log.type == 'Error' %}
+                                <span class="badge bg-danger"><i
+                                        class="fas fa-exclamation-triangle me-1"></i>Error</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ log.type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ log.subject }}</div>
+                            </td>
+                            <td class="small text-wrap" style="max-width: 300px;">
+                                <div class="text-truncate-2" title="{{ log.content }}">
+                                    {{ log.content }}
+                                </div>
+                            </td>
+                            <td class="pe-4">
+                                {% if log.type == 'Email' %}
+                                <span class="text-primary">{{ log.recipient }}</span>
+                                {% else %}
+                                <span class="text-muted">{{ log.username or 'System' }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fas fa-clipboard-list fa-3x mb-3 opacity-25"></i>
+                                <p class="text-muted">No logs found matching your criteria.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

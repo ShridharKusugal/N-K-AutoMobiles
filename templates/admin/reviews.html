@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+
+{% block title %}Admin - Product Reviews{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-star text-warning me-2"></i>Product Reviews</h2>
+            <p class="text-muted small">Moderate customer feedback and ratings</p>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Dashboard
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for review in reviews %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <img src="https://ui-avatars.com/api/?name={{ review.username }}&background=random"
+                                    class="rounded-circle" width="50" height="50">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold mb-0">{{ review.username }}
+                                    <small class="text-muted fw-normal ms-2">{{ review.email }}</small>
+                                </h6>
+                                <div class="text-warning small">
+                                    {% for i in range(review.rating) %}<i class="fas fa-star"></i>{% endfor %}
+                                    {% for i in range(5 - review.rating) %}<i class="far fa-star"></i>{% endfor %}
+                                    <span class="text-muted ms-2">{{ review.created_at.strftime('%d %b %Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <form action="{{ url_for('admin_delete_review', review_id=review.review_id) }}" method="POST"
+                            onsubmit="return confirm('Are you sure you want to delete this review?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-light p-3 rounded-3 mb-3">
+                        <p class="mb-1"><small class="text-muted fw-bold">PRODUCT:</small> <span class="fw-bold">{{
+                                review.product_name }}</span></p>
+                        <p class="mb-0 text-dark">{{ review.comment }}</p>
+                    </div>
+
+                    {% if review.media %}
+                    <div class="d-flex gap-2 mb-0 overflow-auto pb-2">
+                        {% for item in review.media %}
+                        <div class="review-media-item">
+                            {% if item.media_type == 'image' %}
+                            <img src="{{ url_for('static', filename='reviews/' + item.media_url) }}"
+                                class="rounded border shadow-sm" style="height: 100px; width: 100px; object-fit: cover;"
+                                onerror="this.src='https://placehold.co/100?text=IMG'">
+                            {% else %}
+                            <div class="rounded border shadow-sm bg-dark d-flex align-items-center justify-content-center"
+                                style="height: 100px; width: 100px;">
+                                <i class="fas fa-video text-white"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="py-5 bg-white rounded-4 shadow-sm">
+                <i class="far fa-comment-dots fa-4x text-muted mb-3 opacity-25"></i>
+                <h5 class="text-muted">No reviews yet</h5>
+                <p class="text-muted small">Customer reviews will appear here.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .review-media-item {
+        transition: transform 0.2s;
+    }
+
+    .review-media-item:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

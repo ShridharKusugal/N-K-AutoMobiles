@@ -4,89 +4,101 @@
 
 {% block content %}
 <div class="container py-5">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold text-uppercase">Get In Touch</h2>
-        <div class="divider mx-auto bg-primary"></div>
-        <p class="text-muted mt-3">Have questions about a part? Need a wholesale quote? Reach out to us!</p>
-    </div>
-
     <div class="row g-5">
-        <div class="col-lg-5">
-            <div class="card bg-dark text-white shadow h-100 border-0">
-                <div class="card-body p-4 p-lg-5">
-                    <h3 class="fw-bold mb-4">Contact Info</h3>
+        <div class="col-lg-6">
+            <h5 class="text-primary text-uppercase fw-bold mb-3">Get In Touch</h5>
+            <h1 class="display-5 fw-bold mb-4">Have questions about a part? Need a wholesale quote? Reach out to us!
+            </h1>
+            <p class="lead text-muted mb-5">We are here to help you find the right spare parts for your bike. Whether
+                it's a small query or a bulk order, feel free to contact us.</p>
 
-                    <div class="d-flex mb-4">
-                        <div class="me-3">
-                            <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold">Address</h5>
-                            <p class="text-white-50">Kamripeth, Old Hubli,<br>Hubli, Karnataka 580024,<br>India</p>
-                        </div>
-                    </div>
+            <div class="d-flex mb-4">
+                <div class="flex-shrink-0 btn-square bg-primary rounded-circle text-white d-flex align-items-center justify-content-center"
+                    style="width: 60px; height: 60px;">
+                    <i class="fas fa-map-marker-alt fa-lg"></i>
+                </div>
+                <div class="ms-4">
+                    <h5 class="fw-bold">Address</h5>
+                    <p class="text-muted mb-0">Kamripeth, Old Hubli,<br>Hubli, Karnataka 580024,<br>India</p>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Kamripeth,+Old+Hubli,+Karnataka+580024"
+                        target="_blank" class="small text-primary text-decoration-none">Get Directions <i
+                            class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
 
-                    <div class="d-flex mb-4">
-                        <div class="me-3">
-                            <i class="fas fa-phone-alt fa-2x text-primary"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold">Phone</h5>
-                            <p class="text-white-50">+91 9880423662</p>
-                        </div>
-                    </div>
+            <div class="d-flex mb-4">
+                <div class="flex-shrink-0 btn-square bg-primary rounded-circle text-white d-flex align-items-center justify-content-center"
+                    style="width: 60px; height: 60px;">
+                    <i class="fas fa-phone-alt fa-lg"></i>
+                </div>
+                <div class="ms-4">
+                    <h5 class="fw-bold">Phone</h5>
+                    <p class="text-muted mb-0">+91 9880423662</p>
+                    <small class="text-muted">Mon - Sat, 9am - 8pm</small>
+                </div>
+            </div>
 
-                    <div class="d-flex mb-4">
-                        <div class="me-3">
-                            <i class="fas fa-envelope fa-2x text-primary"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold">Email</h5>
-                            <p class="text-white-50">quadriraibag@gmail.com</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-5">
-                        <h5 class="fw-bold mb-3">Connect With Us</h5>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i
-                                class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i
-                                class="fab fa-instagram"></i></a>
-                        <a href="https://wa.me/919880423662" class="btn btn-outline-light btn-sm rounded-circle"><i
-                                class="fab fa-whatsapp"></i></a>
-                    </div>
+            <div class="d-flex">
+                <div class="flex-shrink-0 btn-square bg-primary rounded-circle text-white d-flex align-items-center justify-content-center"
+                    style="width: 60px; height: 60px;">
+                    <i class="fas fa-envelope fa-lg"></i>
+                </div>
+                <div class="ms-4">
+                    <h5 class="fw-bold">Email</h5>
+                    <p class="text-muted mb-0">quadriraibag@gmail.com</p>
+                    <small class="text-muted">We reply within 24 hours</small>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-7">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body p-4 p-lg-5">
-                    <form>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow rounded-4 overflow-hidden">
+                <div class="card-body p-5">
+                    <h3 class="fw-bold mb-4">Send us a Message</h3>
+                    <form action="{{ url_for('contact') }}" method="POST">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="name" class="form-label fw-bold">Your Name</label>
-                                <input type="text" class="form-control bg-light" id="name" required>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="name" name="name"
+                                        placeholder="Your Name" required>
+                                    <label for="name">Your Name</label>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="email" class="form-label fw-bold">Email Address</label>
-                                <input type="email" class="form-control bg-light" id="email" required>
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="email" name="email"
+                                        placeholder="Your Email" required>
+                                    <label for="email">Your Email</label>
+                                </div>
                             </div>
                             <div class="col-12">
-                                <label for="subject" class="form-label fw-bold">Subject</label>
-                                <input type="text" class="form-control bg-light" id="subject" required>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="subject" name="subject"
+                                        placeholder="Subject" required>
+                                    <label for="subject">Subject</label>
+                                </div>
                             </div>
                             <div class="col-12">
-                                <label for="message" class="form-label fw-bold">Message</label>
-                                <textarea class="form-control bg-light" id="message" rows="5" required></textarea>
+                                <div class="form-floating">
+                                    <textarea class="form-control" placeholder="Leave a message here" id="message"
+                                        name="message" style="height: 150px" required></textarea>
+                                    <label for="message">Message</label>
+                                </div>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">Send
+                                <button class="btn btn-primary w-100 py-3 fw-bold rounded-pill" type="submit">Send
                                     Message</button>
                             </div>
                         </div>
                     </form>
                 </div>
+            </div>
+
+            <div class="mt-4">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15383.916053338948!2d75.1209355!3d15.3647083!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bb8d7356f62b08f%3A0x629676766d0b6710!2sOld%20Hubli%2C%20Hubballi%2C%20Karnataka%20580024!5e0!3m2!1sen!2sin!4v1652436789012!5m2!1sen!2sin"
+                    width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade" class="rounded-4 shadow-sm"></iframe>
             </div>
         </div>
     </div>
