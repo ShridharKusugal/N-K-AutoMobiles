@@ -14,9 +14,63 @@
                     <h1 class="display-5 fw-bold mb-3 success-text">Thank You!</h1>
                     <h2 class="h4 mb-4 text-muted">Your order has been placed successfully.</h2>
 
-                    <div class="alert alert-light border d-inline-block px-4 py-3 mb-4">
-                        <p class="mb-0 fs-5">Order ID: <span class="fw-bold text-dark">#{{ order.order_id }}</span></p>
+                    <div class="alert alert-light border d-inline-block px-4 py-3 mb-4 shadow-sm position-relative">
+                        <p class="mb-0 fs-5">Order ID: <span class="fw-bold text-dark" id="orderIdText">#{{
+                                order.order_id
+                                }}</span>
+                            <button class="btn btn-sm btn-outline-primary ms-2 rounded-pill" onclick="copyOrderId()">
+                                <i class="far fa-copy"></i> Copy
+                            </button>
+                        </p>
                     </div>
+
+                    <!-- Order ID Retention Popup (Modal) -->
+                    <div class="modal fade" id="orderIdReminderModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                                <div class="modal-header bg-primary text-white border-0 py-3"
+                                    style="border-radius: 20px 20px 0 0;">
+                                    <h5 class="modal-title fw-bold"><i class="fas fa-bookmark me-2"></i>SAVE YOUR ORDER
+                                        ID</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center py-5 px-4">
+                                    <div class="mb-4 text-primary animate__animated animate__pulse animate__infinite">
+                                        <i class="fas fa-info-circle fa-4x"></i>
+                                    </div>
+                                    <h4 class="fw-bold mb-3">Make sure to mark your Order ID!</h4>
+                                    <p class="text-muted mb-4 fs-6">
+                                        Please note down or save your Order ID <strong>#{{ order.order_id }}</strong>.
+                                        This will help you <strong>track your order</strong> and check your purchase
+                                        history later.
+                                    </p>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-primary btn-lg rounded-pill fw-bold py-3"
+                                            data-bs-dismiss="modal">
+                                            I'VE MARKED THE ID
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Show popup reminder on page load
+                        window.onload = function () {
+                            var myModal = new bootstrap.Modal(document.getElementById('orderIdReminderModal'));
+                            myModal.show();
+                        };
+
+                        // helper for copy
+                        function copyOrderId() {
+                            const id = "{{ order.order_id }}";
+                            navigator.clipboard.writeText(id).then(() => {
+                                alert("Order ID #" + id + " copied to clipboard!");
+                            });
+                        }
+                    </script>
 
                     {% if order.status == 'Payment Pending' %}
                     <div class="alert alert-warning border d-inline-block px-4 py-3 mb-4">
@@ -48,11 +102,32 @@
                         <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg rounded-pill px-5 hover-lift">
                             Continue Shopping
                         </a>
+                        <a href="{{ url_for('track_order') }}"
+                            class="btn btn-outline-primary btn-lg rounded-pill px-5 hover-lift">
+                            <i class="fas fa-search-location me-2"></i>Track Order
+                        </a>
+                        <a href="{{ url_for('order_invoice', order_id=order.order_id) }}"
+                            class="btn btn-outline-success btn-lg rounded-pill px-5 hover-lift">
+                            <i class="fas fa-file-invoice me-2"></i>View Invoice
+                        </a>
                         <a href="{{ url_for('home') }}"
                             class="btn btn-outline-secondary btn-lg rounded-pill px-5 hover-lift">
                             Back to Home
                         </a>
                     </div>
+
+                    {% if order.status in ['Pending', 'Payment Pending'] %}
+                    <div class="mt-5 border-top pt-4">
+                        <p class="text-muted small mb-3">Made a mistake? You can cancel your order while it's still
+                            pending.</p>
+                        <form action="{{ url_for('cancel_order', order_id=order.order_id) }}" method="POST"
+                            onsubmit="return confirm('Are you sure you want to cancel this order? This action cannot be undone.')">
+                            <button type="submit" class="btn btn-link text-danger text-decoration-none">
+                                <i class="fas fa-times me-1"></i> Cancel Order
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

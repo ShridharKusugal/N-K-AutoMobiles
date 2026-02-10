@@ -36,12 +36,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="d-flex gap-2 flex-wrap justify-content-md-end">
-                        <a href="{{ url_for('admin_orders', q=search_query) }}"
-                            class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-3">All</a>
+                        <a href="{{ url_for('admin_orders', status='Payment Pending', q=search_query) }}"
+                            class="btn btn-sm {% if status_filter == 'Payment Pending' %}btn-info{% else %}btn-outline-info{% endif %} rounded-pill px-3">Payment
+                            Pending</a>
                         <a href="{{ url_for('admin_orders', status='Pending', q=search_query) }}"
                             class="btn btn-sm {% if status_filter == 'Pending' %}btn-warning{% else %}btn-outline-warning{% endif %} rounded-pill px-3">Pending</a>
                         <a href="{{ url_for('admin_orders', status='Confirmed', q=search_query) }}"
-                            class="btn btn-sm {% if status_filter == 'Confirmed' %}btn-info{% else %}btn-outline-info{% endif %} rounded-pill px-3">Confirmed</a>
+                            class="btn btn-sm {% if status_filter == 'Confirmed' %}btn-info{% else %}btn-outline-primary{% endif %} rounded-pill px-3">Confirmed</a>
                         <a href="{{ url_for('admin_orders', status='Shipped', q=search_query) }}"
                             class="btn btn-sm {% if status_filter == 'Shipped' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-3">Shipped</a>
                         <a href="{{ url_for('admin_orders', status='Delivered', q=search_query) }}"
@@ -73,8 +74,13 @@
                     <tr>
                         <td><strong>#{{ order.order_id }}</strong></td>
                         <td>
-                            <div>{{ order.username }}</div>
-                            <small class="text-muted">{{ order.email }}</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <span>{{ order.display_name }}</span>
+                                {% if not order.user_id %}
+                                <span class="badge bg-secondary" style="font-size: 0.6rem;">GUEST</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ order.customer_email }}</small>
                         </td>
                         <td>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else 'N/A' }}</td>
                         <td class="fw-bold text-success">
@@ -85,7 +91,9 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if order.status == 'Pending' %}
+                            {% if order.status == 'Payment Pending' %}
+                            <span class="badge bg-soft-info text-info border border-info">Payment Pending</span>
+                            {% elif order.status == 'Pending' %}
                             <span class="badge bg-warning text-dark">Pending</span>
                             {% elif order.status == 'Confirmed' %}
                             <span class="badge bg-info">Confirmed</span>
@@ -108,6 +116,16 @@
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <ul class="dropdown-menu">
+                                    <li>
+                                        <form
+                                            action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"
+                                            method="POST">
+                                            <button type="submit" name="status" value="Payment Pending"
+                                                class="dropdown-item">
+                                                <i class="fas fa-info-circle text-info me-2"></i>Payment Pending
+                                            </button>
+                                        </form>
+                                    </li>
                                     <li>
                                         <form
                                             action="{{ url_for('admin_update_order_status', order_id=order.order_id) }}"

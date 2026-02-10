@@ -3,3 +3,4 @@ mysql-connector-python==8.2.0
 python-dotenv==1.0.0
 email_validator==2.1.0
 razorpay==1.4.1
+Flask-Mail==0.9.1

@@ -1,74 +1,222 @@
 {% extends "layout.html" %}
 
-{% block title %}Track Your Order{% endblock %}
+{% block title %}Track Your Order | NK AUTOMOBILES{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Track Your Order</h2>
+<div class="profile-section py-5">
+    <div class="container py-4">
+        <div class="text-center mb-5 animate-in">
+            <h1 class="fw-bold text-dark mb-2">Track Your Order</h1>
+            <p class="text-muted">Enter your Order ID and contact details to get real-time updates.</p>
+            <div class="divider bg-primary mx-auto"></div>
+        </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-8 animate-in delay-1">
+                <div class="glass-card p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                            style="width: 70px; height: 70px;">
+                            <i class="fas fa-search-location fa-2x"></i>
+                        </div>
+                    </div>
+
                     <form method="POST" action="{{ url_for('track_order') }}">
-                        <div class="mb-3">
-                            <label for="order_id" class="form-label">Order ID</label>
-                            <input type="number" class="form-control" id="order_id" name="order_id" required
-                                placeholder="e.g. 101">
+                        <div class="mb-4">
+                            <label for="order_id" class="form-label fw-bold small text-uppercase">Order ID</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i
+                                        class="fas fa-hashtag text-muted"></i></span>
+                                <input type="number" class="form-control form-control-custom border-start-0"
+                                    id="order_id" name="order_id" required placeholder="Enter Order ID (e.g. 101)">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="email_or_phone" class="form-label">Email or Phone Number</label>
-                            <input type="text" class="form-control" id="email_or_phone" name="email_or_phone" required
-                                placeholder="Email or Phone used for order">
+                        <div class="mb-4">
+                            <label for="email_or_phone" class="form-label fw-bold small text-uppercase">Email or
+                                Phone</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i
+                                        class="fas fa-user-check text-muted"></i></span>
+                                <input type="text" class="form-control form-control-custom border-start-0"
+                                    id="email_or_phone" name="email_or_phone" required
+                                    placeholder="Email or Phone used during checkout">
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Track Order</button>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                            <i class="fas fa-map-marker-alt me-2"></i>TRACK SHIPMENT
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
 
-    {% if order %}
-    <div class="mt-5">
-        <div class="card border-primary">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Order Status: {{ order.status }}</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5>Order Details</h5>
-                        <p><strong>Order ID:</strong> #{{ order.order_id }}</p>
-                        <p><strong>Date:</strong> {{ order.created_at }}</p>
-                        <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
-                        <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+        {% if order %}
+        <div class="row justify-content-center mt-5">
+            <div class="col-lg-10 animate-in delay-2">
+                <div class="glass-card shadow-lg">
+                    <!-- Order Header -->
+                    <div
+                        class="p-4 border-bottom bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div>
+                            <span class="badge bg-primary rounded-pill px-3 py-2 mb-2">ORDER #{{ order.order_id
+                                }}</span>
+                            <h4 class="mb-0 fw-bold">Current Status: <span class="text-primary">{{ order.status
+                                    }}</span></h4>
+                        </div>
+                        <div class="text-md-end">
+                            <p class="mb-0 text-muted small">Placed on</p>
+                            <p class="mb-0 fw-bold">{{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <h5>Tracking Information</h5>
-                        {% if order.tracking_number %}
-                        <p><strong>Courier:</strong> {{ order.courier_name }}</p>
-                        <p><strong>Tracking Number:</strong> {{ order.tracking_number }}</p>
-                        {% else %}
-                        <p class="text-muted">Tracking information not yet available.</p>
-                        {% endif %}
+
+                    <div class="card-body p-4 p-md-5">
+                        <!-- Tracking Timeline (Simplified) -->
+                        <div class="row mb-5">
+                            <div class="col-12">
+                                <h5 class="fw-bold mb-4"><i class="fas fa-shipping-fast text-primary me-2"></i>Tracking
+                                    Progress</h5>
+                                <div class="d-flex justify-content-between position-relative mb-5 mt-4">
+                                    <div class="progress position-absolute w-100"
+                                        style="height: 4px; top: 15px; z-index: 0;">
+                                        {% set status_val = 25 %}
+                                        {% if order.status == 'Confirmed' %}{% set status_val = 50 %}{% endif %}
+                                        {% if order.status == 'Shipped' %}{% set status_val = 75 %}{% endif %}
+                                        {% if order.status == 'Delivered' %}{% set status_val = 100 %}{% endif %}
+                                        {% if order.status == 'Cancelled' %}{% set status_val = 0 %}{% endif %}
+                                        <div class="progress-bar {% if order.status == 'Cancelled' %}bg-danger{% else %}bg-primary{% endif %}"
+                                            role="progressbar" style="width: {{ status_val }}%;"></div>
+                                    </div>
+
+                                    <div class="text-center position-relative" style="z-index: 1;">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                            style="width: 35px; height: 35px;">
+                                            <i class="fas fa-clipboard-check small"></i>
+                                        </div>
+                                        <span class="small fw-bold">Placed</span>
+                                    </div>
+
+                                    <div class="text-center position-relative" style="z-index: 1;">
+                                        <div class="{% if status_val >= 50 %}bg-primary text-white{% else %}bg-white text-muted border{% endif %} rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                            style="width: 35px; height: 35px;">
+                                            <i class="fas fa-box small"></i>
+                                        </div>
+                                        <span class="small fw-bold">Confirmed</span>
+                                    </div>
+
+                                    <div class="text-center position-relative" style="z-index: 1;">
+                                        <div class="{% if status_val >= 75 %}bg-primary text-white{% else %}bg-white text-muted border{% endif %} rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                            style="width: 35px; height: 35px;">
+                                            <i class="fas fa-truck-moving small"></i>
+                                        </div>
+                                        <span class="small fw-bold">Shipped</span>
+                                    </div>
+
+                                    <div class="text-center position-relative" style="z-index: 1;">
+                                        <div class="{% if status_val >= 100 %}bg-primary text-white{% else %}bg-white text-muted border{% endif %} rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                            style="width: 35px; height: 35px;">
+                                            <i class="fas fa-home small"></i>
+                                        </div>
+                                        <span class="small fw-bold">Delivered</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <!-- Left Col: Shipping Details -->
+                            <div class="col-md-6 border-end">
+                                <h5 class="fw-bold mb-3"><i class="fas fa-map-marker-alt text-primary me-2"></i>Shipping
+                                    Address</h5>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="fw-bold mb-1">{{ order.full_name }}</p>
+                                    <p class="mb-0 text-muted small">
+                                        {{ order.address_line1 }}<br>
+                                        {% if order.address_line2 %}{{ order.address_line2 }}<br>{% endif %}
+                                        {{ order.city }}, {{ order.state }} - {{ order.pincode }}<br>
+                                        <strong>Phone:</strong> {{ order.phone_number }}
+                                    </p>
+                                </div>
+
+                                <h5 class="fw-bold mt-4 mb-3"><i class="fas fa-receipt text-primary me-2"></i>Order
+                                    Summary</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="text-muted">Payment Method:</td>
+                                            <td class="text-end fw-bold">{{ order.payment_method }}</td>
+                                        </tr>
+                                        {% if order.transaction_id %}
+                                        <tr>
+                                            <td class="text-muted">Transaction ID:</td>
+                                            <td class="text-end small">{{ order.transaction_id }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        <tr class="border-top">
+                                            <td class="fw-bold">Total Paid:</td>
+                                            <td class="text-end fw-bold text-primary fs-5">₹{{ order.total_amount }}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="{{ url_for('order_invoice', order_id=order.order_id) }}"
+                                        class="btn btn-outline-primary w-100 fw-bold">
+                                        <i class="fas fa-file-invoice me-2"></i>VIEW FULL INVOICE
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Right Col: Order Items -->
+                            <div class="col-md-6">
+                                <h5 class="fw-bold mb-3"><i class="fas fa-shopping-bag text-primary me-2"></i>Ordered
+                                    Items</h5>
+                                <div class="list-group list-group-flush">
+                                    {% for item in items %}
+                                    <div class="list-group-item bg-transparent border-0 px-0 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0 animate-in">
+                                                <img src="{{ url_for('static', filename='products/' + (item.image_url if item.image_url else 'default.jpg')) }}"
+                                                    class="rounded shadow-sm"
+                                                    style="width: 60px; height: 60px; object-fit: cover;"
+                                                    onerror="handleImageError(this, '{{ item.name }}')">
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-0 fw-bold">{{ item.name }}</h6>
+                                                <p class="mb-0 text-muted small">Qty: {{ item.quantity }} &times; ₹{{
+                                                    item.price }}</p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="fw-bold">₹{{ item.price * item.quantity }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if order.tracking_number %}
+                                <div
+                                    class="bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded p-3 mt-4 text-center">
+                                    <p class="mb-1 fw-bold text-primary">Logistics Partner: {{ order.courier_name }}</p>
+                                    <p class="mb-0 small">Tracking ID: <strong>{{ order.tracking_number }}</strong></p>
+                                </div>
+                                {% else %}
+                                <div class="bg-light rounded p-3 mt-4 text-center">
+                                    <p class="mb-0 text-muted small"><i class="fas fa-info-circle me-1"></i> Tracking ID
+                                        will be generated once the order is shipped.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-white p-4 text-center">
+                        <p class="text-muted small mb-0">Need help? <a href="{{ url_for('contact') }}"
+                                class="text-primary text-decoration-none fw-bold">Contact Support</a></p>
                     </div>
                 </div>
-
-                <hr>
-                <h5>Items</h5>
-                <ul class="list-group list-group-flush">
-                    {% for item in items %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ item.name }}</strong> (x{{ item.quantity }})
-                        </div>
-                        <span>₹{{ item.price }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
             </div>
         </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endblock %}

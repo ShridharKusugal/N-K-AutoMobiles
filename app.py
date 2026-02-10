@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, jsonify
+from flask_mail import Mail, Message
 import mysql.connector
 from mysql.connector import Error
 from functools import wraps
@@ -10,9 +11,13 @@ from datetime import datetime, timedelta
 import uuid
 import csv
 import io
+import json
 from email_validator import validate_email, EmailNotValidError
 from email_validator.exceptions import EmailUndeliverableError
+import random
+import string
 # import razorpay
+import re
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -22,6 +27,16 @@ app = Flask(__name__)
 app.secret_key = 'nk_automobiles_secret_key_123'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
+# Email Configuration
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', app.config['MAIL_USERNAME'])
+
+mail = Mail(app)
+
 # ==========================
 # RAZORPAY CONFIGURATION (REMOVED)
 # ==========================
@@ -29,15 +44,34 @@ RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', 'your_key_id_here')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', 'your_key_secret_here')
 # razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
+@app.before_request
+def load_guest_data():
+    """Load guest orders from cookies if session is empty (e.g. browser restart)"""
+    if 'user_id' not in session and 'guest_order_ids' not in session:
+        cookie_orders = request.cookies.get('guest_orders')
+        if cookie_orders:
+            try:
+                order_ids = json.loads(cookie_orders)
+                if isinstance(order_ids, list):
+                    session['guest_order_ids'] = order_ids
+            except Exception:
+                pass
+
 @app.after_request
 def add_header(response):
     """
-    Add headers to prevent caching, ensuring that the browser always fetches 
-    the latest version from the server and handles logout/back-button correctly.
+    Add headers to prevent caching and save guest order IDs to cookies.
     """
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    
+    # Save guest orders to cookie for 30 days
+    if 'guest_order_ids' in session:
+        response.set_cookie('guest_orders', 
+                            json.dumps(session['guest_order_ids']),
+                            max_age=30*24*60*60)
+                            
     return response
 
 # ==========================
@@ -47,11 +81,13 @@ UPLOAD_FOLDER = os.path.join(app.static_folder, 'products')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'webm', 'mov'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['REVIEWS_UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'reviews')
+app.config['PAYMENTS_UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'payments')
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # 64MB max file size for videos
 
 # Ensure upload folders exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(app.config['REVIEWS_UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['PAYMENTS_UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -79,7 +115,8 @@ def get_db_connection():
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
+        # Allow access if user is logged in OR if it's a guest session
+        if 'user_id' not in session and not session.get('is_guest'):
             flash('Please login first.', 'warning')
             return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
@@ -94,6 +131,40 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def send_email(subject, recipient, body, html=None):
+    try:
+        msg = Message(subject, recipients=[recipient])
+        msg.body = body
+        if html:
+            msg.html = html
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
+def send_order_confirmation_email(order_id):
+    """Fetches order details and sends a detailed HTML confirmation email."""
+    try:
+        order, items = db_queries.get_order_details(order_id)
+        if not order:
+            return False
+            
+        subtotal = sum(float(item['price']) * int(item['quantity']) for item in items)
+        
+        html_body = render_template('emails/order_confirmation.html', 
+                                    order=order, 
+                                    items=items, 
+                                    subtotal=subtotal)
+        
+        # Plain text version for non-HTML clients
+        text_body = f"Hello {order['full_name']},\n\nYour order #{order_id} has been placed successfully.\nTotal Amount: ₹{order['total_amount']}\n\nYou can track your order here: {url_for('order_confirmation', order_id=order_id, _external=True)}"
+        
+        return send_email(f'Order Confirmed - NK Automobiles #{order_id}', order['email'], text_body, html=html_body)
+    except Exception as e:
+        print(f"Error in send_order_confirmation_email: {e}")
+        return False
+
 # ==========================
 # ROUTES
 # ==========================
@@ -106,6 +177,8 @@ def inject_cart_count():
     count = 0
     if 'user_id' in session:
         count = db_queries.get_cart_count(session['user_id'])
+    elif 'cart' in session:
+        count = sum(item['quantity'] for item in session['cart'].values())
     return dict(cart_count=count)
 
 # ==========================
@@ -211,43 +284,99 @@ def add_review(product_id):
 
 
 @app.route('/cart')
-@login_required
 def cart():
     if session.get('role') == 'admin':
         flash('Admins cannot shop. Please use the dashboard to manage orders.', 'warning')
         return redirect(url_for('admin_dashboard'))
-    cart_items, grand_total = db_queries.get_cart_items(session['user_id'])
+    
+    if 'user_id' in session:
+        cart_items, grand_total = db_queries.get_cart_items(session['user_id'])
+    else:
+        # Handle Guest Cart
+        guest_cart = session.get('cart', {})
+        cart_items = []
+        grand_total = 0
+        for product_id, item in guest_cart.items():
+            product, _, _, _ = db_queries.get_product_details(product_id)
+            if product:
+                cart_items.append({
+                    'product_id': product['product_id'],
+                    'name': product['name'],
+                    'price': product['price'],
+                    'image_url': product['image_url'],
+                    'quantity': item['quantity'],
+                    'total_price': product['price'] * item['quantity']
+                })
+                grand_total += product['price'] * item['quantity']
+                
     return render_template('cart.html', cart_items=cart_items, grand_total=grand_total)
 
-@app.route('/add_to_cart/<int:product_id>', methods=['POST'])
-@login_required
+@app.route('/add_to_cart/<int:product_id>', methods=['GET', 'POST'])
 def add_to_cart(product_id):
     if session.get('role') == 'admin':
         flash('Admins cannot purchase products.', 'danger')
         return redirect(url_for('admin_dashboard'))
-    quantity = int(request.form.get('quantity', 1))
-    success, message = db_queries.add_to_cart_db(session['user_id'], product_id, quantity)
-    
-    if success:
-        flash(message, 'success')
+
+    product, _, _, _ = db_queries.get_product_details(product_id)
+    if not product:
+        flash('Product not found.', 'danger')
+        return redirect(url_for('home'))
+
+    # If GET, it's likely a redirect from guest login or buy now
+    if request.method == 'GET':
+        quantity = 1
+        action = 'add_to_cart'
     else:
-        # Check if message implies stock issue (contains "units" or "limit") to decide category
-        category = 'warning' if 'available' in message or 'limit' in message else 'danger'
-        flash(message, category)
+        try:
+            quantity = int(request.form.get('quantity', 1))
+        except ValueError:
+            quantity = 1
+        action = request.form.get('action', 'add_to_cart')
+    
+    # Check Stock
+    if quantity > product['stock_quantity']:
+        flash(f"Only {product['stock_quantity']} units available.", 'warning')
         return redirect(url_for('product_detail', product_id=product_id))
-            
-        return redirect(url_for('product_detail', product_id=product_id))
-            
-    if request.form.get('action') == 'buy_now':
-        return redirect(url_for('checkout'))
+
+    if 'user_id' in session:
+        # Logged in User Logic
+        db_queries.add_to_cart_db(session['user_id'], product_id, quantity)
+        flash(f"{product['name']} added to cart!", 'success')
+    else:
+        # Guest User Logic
+        if 'cart' not in session:
+            session['cart'] = {}
         
+        cart = session['cart']
+        pid_str = str(product_id)
+        if pid_str in cart:
+            cart[pid_str]['quantity'] += quantity
+        else:
+            cart[pid_str] = {'quantity': quantity}
+        session['cart'] = cart
+        flash(f"{product['name']} added to guest cart!", 'success')
+    
+    if action == 'buy_now' or request.args.get('action') == 'buy_now':
+        return redirect(url_for('checkout'))
+    
     return redirect(url_for('cart'))
 
 
 @app.route('/remove_from_cart/<int:product_id>', methods=['POST'])
-@login_required
 def remove_from_cart(product_id):
-    success, message = db_queries.remove_from_cart(session['user_id'], product_id)
+    if 'user_id' in session:
+        success, message = db_queries.remove_from_cart(session['user_id'], product_id)
+    else:
+        # Guest Cart
+        cart = session.get('cart', {})
+        pid_str = str(product_id)
+        if pid_str in cart:
+            del cart[pid_str]
+            session['cart'] = cart
+            success, message = True, "Item removed from cart"
+        else:
+            success, message = False, "Item not found in cart"
+            
     if success:
         flash(message, 'success')
     else:
@@ -255,13 +384,11 @@ def remove_from_cart(product_id):
     return redirect(url_for('cart'))
 
 @app.route('/update_cart/<int:product_id>', methods=['POST'])
-@login_required
 def update_cart(product_id):
     action = request.form.get('action')
     try:
         current_qty = int(request.form.get('quantity'))
         if action == 'confirm':
-             # Manual input
              new_qty = current_qty
         elif action == 'increase':
             new_qty = current_qty + 1
@@ -270,7 +397,24 @@ def update_cart(product_id):
         else:
             new_qty = current_qty
 
-        success, message = db_queries.update_cart_quantity(session['user_id'], product_id, new_qty)
+        if 'user_id' in session:
+            success, message = db_queries.update_cart_quantity(session['user_id'], product_id, new_qty)
+        else:
+            # Guest logic
+            if new_qty <= 0:
+                return remove_from_cart(product_id)
+            
+            product, _, _, _ = db_queries.get_product_details(product_id)
+            if not product:
+                success, message = False, "Product not found"
+            elif new_qty > product['stock_quantity']:
+                success, message = False, f"Only {product['stock_quantity']} units available"
+            else:
+                cart = session.get('cart', {})
+                cart[str(product_id)] = {'quantity': new_qty}
+                session['cart'] = cart
+                success, message = True, "Quantity updated"
+
         if not success:
             flash(message, 'warning')
             
@@ -282,12 +426,18 @@ def update_cart(product_id):
 @app.route('/wishlist')
 @login_required
 def wishlist():
+    if 'user_id' not in session:
+        flash("Login to maintain a personal wishlist.", "info")
+        return redirect(url_for('login'))
     items = db_queries.get_wishlist_items(session['user_id'])
     return render_template('wishlist.html', items=items)
 
 @app.route('/wishlist/toggle/<int:product_id>', methods=['POST'])
 @login_required
 def toggle_wishlist(product_id):
+    if 'user_id' not in session:
+        flash("Please login to use the wishlist.", "info")
+        return redirect(url_for('login'))
     success, message = db_queries.toggle_wishlist(session['user_id'], product_id)
     if success:
         flash(message, 'success')
@@ -296,7 +446,6 @@ def toggle_wishlist(product_id):
     return redirect(request.referrer or url_for('products'))
 
 @app.route('/api/validate-coupon', methods=['POST'])
-@login_required
 def api_validate_coupon():
     data = request.json
     code = data.get('code')
@@ -316,13 +465,13 @@ def api_validate_coupon():
     return {'success': False, 'message': message}
 
 @app.route('/checkout', methods=['GET', 'POST'])
-@login_required
 def checkout():
     if session.get('role') == 'admin':
         flash('Admins cannot perform checkout.', 'danger')
         return redirect(url_for('admin_dashboard'))
-    user_id = session['user_id']
-    user = db_queries.get_user_by_id(user_id) # Fetch user details for pre-filling
+    
+    user_id = session.get('user_id')
+    user = db_queries.get_user_by_id(user_id) if user_id else None
     
     # Direct Buy Logic
     direct_product_id = request.args.get('product_id')
@@ -332,6 +481,7 @@ def checkout():
         # Get address details from form
         order_data = {
             'full_name': request.form['full_name'],
+            'email': request.form['email'],
             'phone': request.form['phone_number'],
             'pincode': request.form['pincode'],
             'addr1': request.form['address_line1'],
@@ -354,119 +504,179 @@ def checkout():
                  return redirect(url_for('checkout', product_id=direct_product_id, quantity=direct_quantity))
              return redirect(url_for('checkout'))
 
-        # VALIDATION: Require Transaction ID for UPI
+        # VALIDATION: Require Transaction ID & Screenshot for UPI_QR
         if order_data['payment_method'] == 'UPI_QR':
              tid = order_data['transaction_id'].strip()
+             
+             # 1. Check for empty UTR
              if not tid:
-                flash("Please enter the Payment Transaction ID / UTR Number.", "danger")
+                flash("Please enter the 12-digit Payment Transaction ID / UTR Number.", "danger")
                 if direct_product_id:
                     return redirect(url_for('checkout', product_id=direct_product_id, quantity=direct_quantity))
                 return redirect(url_for('checkout'))
              
-             # Check for duplicate transaction ID
+             # 2. Check for exact 12-digit numeric format (Standard UPI UTR)
+             if not re.match(r'^[0-9]{12}$', tid):
+                 flash("Invalid Transaction ID. A valid UPI UTR must be exactly 12 numeric digits.", "danger")
+                 if direct_product_id:
+                     return redirect(url_for('checkout', product_id=direct_product_id, quantity=direct_quantity))
+                 return redirect(url_for('checkout'))
+             
+             # 3. Check for duplicate transaction ID
              if db_queries.is_transaction_id_used(tid):
                  flash(f"Transaction ID '{tid}' has already been used. Please enter a valid, new Transaction ID.", "danger")
                  if direct_product_id:
                     return redirect(url_for('checkout', product_id=direct_product_id, quantity=direct_quantity))
                  return redirect(url_for('checkout'))
+                 
+             # 4. Handle Screenshot Requirement
+             screenshot = request.files.get('payment_screenshot')
+             if not screenshot or screenshot.filename == '':
+                 flash("Please upload a screenshot of your payment for verification.", "danger")
+                 if direct_product_id:
+                     return redirect(url_for('checkout', product_id=direct_product_id, quantity=direct_quantity))
+                 return redirect(url_for('checkout'))
+                 
+             if screenshot and allowed_file(screenshot.filename):
+                 filename = secure_filename(screenshot.filename)
+                 unique_filename = f"PAY_{uuid.uuid4().hex[:8]}_{filename}"
+                 screenshot.save(os.path.join(app.config['PAYMENTS_UPLOAD_FOLDER'], unique_filename))
+                 order_data['payment_screenshot'] = unique_filename
+             else:
+                 flash("Invalid file format for screenshot. Please upload an image (JPG, PNG).", "danger")
+                 if direct_product_id:
+                     return redirect(url_for('checkout', product_id=direct_product_id, quantity=direct_quantity))
+                 return redirect(url_for('checkout'))
 
 
         # Handle Direct Buy Order or Cart Order
-        direct_pid = request.form.get('direct_product_id') # From hidden input
-        direct_qty = int(request.form.get('direct_quantity', 1)) # From hidden input
+        direct_pid = request.form.get('direct_product_id')
+        direct_qty = int(request.form.get('direct_quantity', 1))
 
-        if direct_pid:
-            # Create Temporary "Cart Item" Structure for Order Creation
-            # We need a custom order creation logic for this, or modify create_order
-            # For simplicity, let's use a specialized logic here since create_order reads from cart
-            
-            # Fetch product
-            product, _, _, _ = db_queries.get_product_details(direct_pid)
-            if not product:
-                flash("Product not found.", "danger")
-                return redirect(url_for('home'))
-                
-            cart_total = product['price'] * direct_qty
-            final_total = cart_total
-            discount_amount = 0.0
-            applied_coupon_id = None
-            
-            try:
-                conn = db_queries.get_db_connection()
-                cursor = conn.cursor(dictionary=True)
-                
-                # Validate Coupon AGAIN server-side
-                coupon_code = order_data.get('applied_coupon')
-                if coupon_code:
-                    cursor.execute("""
-                        SELECT * FROM coupons 
-                        WHERE code = %s 
-                        AND (valid_from IS NULL OR valid_from <= NOW())
-                        AND (valid_until IS NULL OR valid_until >= NOW())
-                        AND (usage_limit IS NULL OR used_count < usage_limit)
-                        AND min_purchase <= %s
-                    """, (coupon_code, cart_total))
-                    coupon = cursor.fetchone()
-                    if coupon:
-                        applied_coupon_id = coupon['coupon_id']
-                        if coupon['discount_type'] == 'percentage':
-                            discount_amount = (cart_total * float(coupon['discount_value'])) / 100
-                        else:
-                            discount_amount = float(coupon['discount_value'])
-                        final_total = cart_total - discount_amount
-
-                # Determine order status based on payment method
-                order_status = 'Payment Pending' if order_data['payment_method'] in ['UPI', 'UPI_QR'] else 'Pending'
-                
-                # Insert Order
-                cursor.execute("""
-                    INSERT INTO orders (user_id, full_name, phone_number, address_line1, address_line2, city, state, pincode, total_amount, payment_method, transaction_id, status, discount_amount, coupon_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (user_id, order_data['full_name'], order_data['phone'], order_data['addr1'], order_data['addr2'], order_data['city'], order_data['state'], order_data['pincode'], final_total, order_data['payment_method'], order_data['transaction_id'], order_status, discount_amount, applied_coupon_id))
-                order_id = cursor.lastrowid
-                
-                # Track Coupon Usage
-                if applied_coupon_id:
-                    cursor.execute("UPDATE coupons SET used_count = used_count + 1 WHERE coupon_id = %s", (applied_coupon_id,))
-
-                # Insert Order Item
-                cursor.execute("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)", (order_id, direct_pid, direct_qty, product['price']))
-                
-                # Update Stock
-                cursor.execute("UPDATE products SET stock_quantity = stock_quantity - %s WHERE product_id = %s", (direct_qty, direct_pid))
-                
-                conn.commit()
-                cursor.close()
-                conn.close()
-                
-                flash('Order placed successfully!', 'success')
-                
-                # Log Order Placement
-                db_queries.add_log('Activity', user_id=user_id, subject='Order Placed (Direct)', content=f"Order #{order_id} placed for ₹{final_total}.")
-                # Note: final_total is available in this scope
-                db_queries.add_log('Email', recipient=order_data['phone'], subject=f'Order Confirmed #{order_id}', content=f"Your order for {product['name']} has been placed successfully.")
-
-                return redirect(url_for('order_confirmation', order_id=order_id))
-                
-            except Exception as e:
-                flash(f"Error placing direct order: {e}", 'danger')
-                return redirect(url_for('checkout', product_id=direct_pid, quantity=direct_qty))
-
-        else:
-            # Normal Cart Order
+        # If user is logged in and NOT doing direct buy, use the existing db_queries.create_order
+        if 'user_id' in session and not direct_pid:
             order_id, message = db_queries.create_order(user_id, order_data)
         
             if order_id:
                 flash('Order placed successfully!', 'success')
-                
-                # Log Order Placement
                 db_queries.add_log('Activity', user_id=user_id, subject='Order Placed (Cart)', content=f"Order #{order_id} placed.")
-                db_queries.add_log('Email', recipient=order_data['phone'], subject=f'Order Confirmed #{order_id}', content=f"Your cart order has been placed successfully.")
-
+                
+                # Send Actual Confirmation Email
+                email_content = f"Hello,\n\nYour order #{order_id} has been placed successfully at NK Automobiles.\n\nThank you for shopping with us!"
+                email_sent = send_email(f'Order Confirmed - NK Automobiles #{order_id}', order_data['email'], email_content)
+                
+                db_queries.add_log('Email', recipient=order_data['email'], subject=f'Order Confirmed #{order_id}', content=f"Your cart order confirmation email {'sent' if email_sent else 'failed to send'}.")
                 return redirect(url_for('order_confirmation', order_id=order_id))
             else:
                 flash(f'Error placing order: {message}', 'danger')
                 return redirect(url_for('checkout'))
+        
+        # Manual Order Creation for Guest Cart or Direct Buy
+        items_to_order = []
+        if direct_pid:
+            product, _, _, _ = db_queries.get_product_details(direct_pid)
+            if product:
+                items_to_order.append({'product_id': product['product_id'], 'quantity': direct_qty, 'price': product['price'], 'name': product['name']})
+        else:
+            # Guest Cart
+            guest_cart = session.get('cart', {})
+            for pid, item in guest_cart.items():
+                product, _, _, _ = db_queries.get_product_details(pid)
+                if product:
+                    items_to_order.append({'product_id': product['product_id'], 'quantity': item['quantity'], 'price': product['price'], 'name': product['name']})
+
+        if not items_to_order:
+            flash("No items found to order.", "danger")
+            return redirect(url_for('cart'))
+
+        cart_total = sum(i['price'] * i['quantity'] for i in items_to_order)
+        final_total = cart_total
+        discount_amount = 0.0
+        applied_coupon_id = None
+        
+        try:
+            conn = db_queries.get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            
+            # Validate Coupon AGAIN server-side
+            coupon_code = order_data.get('applied_coupon')
+            if coupon_code:
+                cursor.execute("""
+                    SELECT * FROM coupons 
+                    WHERE code = %s 
+                    AND (valid_from IS NULL OR valid_from <= NOW())
+                    AND (valid_until IS NULL OR valid_until >= NOW())
+                    AND (usage_limit IS NULL OR used_count < usage_limit)
+                    AND min_purchase <= %s
+                """, (coupon_code, cart_total))
+                coupon = cursor.fetchone()
+                if coupon:
+                    applied_coupon_id = coupon['coupon_id']
+                    if coupon['discount_type'] == 'percentage':
+                        discount_amount = (cart_total * float(coupon['discount_value'])) / 100
+                    else:
+                        discount_amount = float(coupon['discount_value'])
+                    final_total = cart_total - discount_amount
+
+            # Determine order status based on payment method
+            order_status = 'Payment Pending' if order_data['payment_method'] in ['UPI', 'UPI_QR'] else 'Pending'
+            
+            # Insert Order
+            cursor.execute("""
+                INSERT INTO orders (user_id, email, full_name, phone_number, address_line1, address_line2, city, state, pincode, total_amount, payment_method, transaction_id, payment_screenshot, status, discount_amount, coupon_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (user_id, order_data['email'], order_data['full_name'], order_data['phone'], order_data['addr1'], order_data['addr2'], order_data['city'], order_data['state'], order_data['pincode'], final_total, order_data['payment_method'], order_data['transaction_id'], order_data.get('payment_screenshot'), order_status, discount_amount, applied_coupon_id))
+            order_id = cursor.lastrowid
+            session['last_order_id'] = order_id
+            if 'user_id' not in session:
+                if 'guest_order_ids' not in session:
+                    session['guest_order_ids'] = []
+                if order_id not in session['guest_order_ids']:
+                    session['guest_order_ids'].append(order_id)
+                session.modified = True
+            
+            # Track Coupon Usage
+            if applied_coupon_id:
+                cursor.execute("UPDATE coupons SET used_count = used_count + 1 WHERE coupon_id = %s", (applied_coupon_id,))
+
+            # Insert Order Items
+            for item in items_to_order:
+                cursor.execute("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)", (order_id, item['product_id'], item['quantity'], item['price']))
+                # Update Stock
+                cursor.execute("UPDATE products SET stock_quantity = stock_quantity - %s WHERE product_id = %s", (item['quantity'], item['product_id']))
+            
+            # Award Loyalty Points (1 point per ₹100) if user is logged in
+            if user_id:
+                loyalty_points = int(final_total / 100)
+                if loyalty_points > 0:
+                    cursor.execute("UPDATE users SET loyalty_points = loyalty_points + %s WHERE user_id = %s", (loyalty_points, user_id))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            # Clear guest cart if applicable
+            if not direct_pid and 'user_id' not in session:
+                session.pop('cart', None)
+
+            flash('Order placed successfully!', 'success')
+            
+            # Log Order Placement
+            log_user_id = user_id if user_id else None
+            db_queries.add_log('Activity', user_id=log_user_id, subject='Order Placed', content=f"Order #{order_id} placed for ₹{final_total}.")
+            
+            # Send Detailed Confirmation Email
+            email_sent = send_order_confirmation_email(order_id)
+            
+            db_queries.add_log('Email', recipient=order_data['email'], subject=f'Order Confirmed #{order_id}', content=f"Your order confirmation email {'sent' if email_sent else 'failed to send'}.")
+
+            return redirect(url_for('order_confirmation', order_id=order_id))
+            
+        except Exception as e:
+            flash(f"Error placing order: {e}", 'danger')
+            if direct_pid:
+                return redirect(url_for('checkout', product_id=direct_pid, quantity=direct_qty))
+            return redirect(url_for('checkout'))
 
     # GET Request - Show Checkout Form with Summary
     if direct_product_id:
@@ -486,7 +696,26 @@ def checkout():
         }]
         grand_total = cart_items[0]['total_price']
     else:
-        cart_items, grand_total = db_queries.get_cart_items(user_id)
+        if 'user_id' in session:
+            cart_items, grand_total = db_queries.get_cart_items(user_id)
+        else:
+            # Guest Cart items for display
+            guest_cart = session.get('cart', {})
+            cart_items = []
+            grand_total = 0
+            for pid, item in guest_cart.items():
+                product, _, _, _ = db_queries.get_product_details(pid)
+                if product:
+                    cart_items.append({
+                        'product_id': product['product_id'],
+                        'name': product['name'],
+                        'price': product['price'],
+                        'image_url': product['image_url'],
+                        'quantity': item['quantity'],
+                        'total_price': product['price'] * item['quantity']
+                    })
+                    grand_total += product['price'] * item['quantity']
+
         if not cart_items:
              flash('Your cart is empty.', 'info')
              return redirect(url_for('cart'))
@@ -504,7 +733,6 @@ def checkout():
 #     return jsonify({'success': False, 'message': 'Razorpay integration removed'}), 400
 
 @app.route('/verify-razorpay-payment', methods=['POST'])
-@login_required
 def verify_razorpay_payment():
     """Verify Razorpay payment signature and create order"""
     try:
@@ -532,7 +760,7 @@ def verify_razorpay_payment():
                 return jsonify({'success': False, 'message': 'Payment verification failed'}), 400
         
         # Payment verified successfully, create order in database
-        user_id = session['user_id']
+        user_id = session.get('user_id')
         
         # Prepare order data
         order_data = {
@@ -599,10 +827,17 @@ def verify_razorpay_payment():
 
                 # Insert Order with 'Confirmed' status (payment already verified)
                 cursor.execute("""
-                    INSERT INTO orders (user_id, full_name, phone_number, address_line1, address_line2, city, state, pincode, total_amount, payment_method, transaction_id, status, discount_amount, coupon_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (user_id, order_data['full_name'], order_data['phone'], order_data['addr1'], order_data['addr2'], order_data['city'], order_data['state'], order_data['pincode'], final_total, order_data['payment_method'], order_data['transaction_id'], 'Confirmed', discount_amount, applied_coupon_id))
+                    INSERT INTO orders (user_id, email, full_name, phone_number, address_line1, address_line2, city, state, pincode, total_amount, payment_method, transaction_id, status, discount_amount, coupon_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (user_id, order_data['email'], order_data['full_name'], order_data['phone'], order_data['addr1'], order_data['addr2'], order_data['city'], order_data['state'], order_data['pincode'], final_total, order_data['payment_method'], order_data['transaction_id'], 'Confirmed', discount_amount, applied_coupon_id))
                 order_id = cursor.lastrowid
+                session['last_order_id'] = order_id
+                if 'user_id' not in session:
+                    if 'guest_order_ids' not in session:
+                        session['guest_order_ids'] = []
+                    if order_id not in session['guest_order_ids']:
+                        session['guest_order_ids'].append(order_id)
+                    session.modified = True
                 
                 # Track Coupon Usage
                 if applied_coupon_id:
@@ -625,7 +860,10 @@ def verify_razorpay_payment():
                 
                 # Log Order Placement
                 db_queries.add_log('Activity', user_id=user_id, subject='Order Placed (Razorpay Direct)', content=f"Order #{order_id} placed for ₹{final_total} via Razorpay.")
-                db_queries.add_log('Email', recipient=order_data['phone'], subject=f'Order Confirmed #{order_id}', content=f"Your order for {product['name']} has been placed and payment verified successfully.")
+                
+                # Send Detailed Confirmation Email
+                send_order_confirmation_email(order_id)
+                db_queries.add_log('Email', recipient=order_data.get('email', order_data.get('phone')), subject=f'Order Confirmed #{order_id}', content=f"Detailed order confirmation email sent for direct Razorpay order.")
                 
                 return jsonify({'success': True, 'order_id': order_id})
                 
@@ -634,6 +872,13 @@ def verify_razorpay_payment():
         else:
             # Cart Order
             order_id, message = db_queries.create_order(user_id, order_data)
+            session['last_order_id'] = order_id
+            if 'user_id' not in session:
+                if 'guest_order_ids' not in session:
+                    session['guest_order_ids'] = []
+                if order_id not in session['guest_order_ids']:
+                    session['guest_order_ids'].append(order_id)
+                session.modified = True
             
             if order_id:
                 # Security Check: Verify Amount
@@ -669,7 +914,10 @@ def verify_razorpay_payment():
 
                 # Log Order Placement
                 db_queries.add_log('Activity', user_id=user_id, subject='Order Placed (Razorpay Cart)', content=f"Order #{order_id} placed via Razorpay.")
-                db_queries.add_log('Email', recipient=order_data['phone'], subject=f'Order Confirmed #{order_id}', content=f"Your cart order has been placed and payment verified successfully.")
+                
+                # Send Detailed Confirmation Email
+                send_order_confirmation_email(order_id)
+                db_queries.add_log('Email', recipient=order_data.get('email', order_data.get('phone')), subject=f'Order Confirmed #{order_id}', content=f"Detailed order confirmation email sent for cart Razorpay order.")
                 
                 return jsonify({'success': True, 'order_id': order_id})
             else:
@@ -716,19 +964,79 @@ def razorpay_webhook():
 
 
 @app.route('/order_confirmation/<int:order_id>')
-@login_required
 def order_confirmation(order_id):
-    order, order_items = db_queries.get_order_details(order_id, session['user_id'])
+    user_id = session.get('user_id')
+    # Allow if logged in user owns the order OR if it's the last order placed in this session
+    order, order_items = db_queries.get_order_details(order_id, user_id)
+
+    if not order and session.get('last_order_id') == order_id:
+        order, order_items = db_queries.get_order_details(order_id)
 
     if not order:
-        return "Order not found", 404
+        # Check if they tracked it recently? Let's allow access if tracked in this session too if we want to be generous
+        # For now, let's just use the basic checks.
+        flash("Order not found or you don't have permission to view it.", "danger")
+        return redirect(url_for('home'))
 
     estimated_date = order['created_at'] + timedelta(days=4)
     return render_template('order_confirmation.html', order=order, order_items=order_items, estimated_date=estimated_date)
 
+@app.route('/order/<int:order_id>/invoice')
+def order_invoice(order_id):
+    """Guest-accessible invoice (mirrors confirmation logic)"""
+    user_id = session.get('user_id')
+    order, items = db_queries.get_order_details(order_id, user_id)
+    
+    # Allow guest access if it's their last order or they follow the link from confirmation
+    if not order:
+        if session.get('last_order_id') == order_id:
+             order, items = db_queries.get_order_details(order_id)
+        else:
+            # Fallback for tracking: verify with email/phone if they just tracked it?
+            # For simplicity, if they have the ID and tracked it previously, it might be in session.
+            # But here let's just flash an error if they don't have access.
+            flash("You don't have permission to view this invoice.", "danger")
+            return redirect(url_for('home'))
+
+    subtotal = sum(float(item['price']) * int(item['quantity']) for item in items)
+    return render_template('admin/invoice.html', order=order, items=items, subtotal=subtotal, is_guest=True)
+
+
+@app.route('/my-orders')
+def my_orders():
+    """Show order history for logged in users OR guests with session orders"""
+    if 'user_id' in session:
+        return redirect(url_for('profile'))
+        
+    guest_order_ids = session.get('guest_order_ids', [])
+    orders = []
+    
+    if guest_order_ids:
+        for oid in reversed(guest_order_ids):
+            order, items = db_queries.get_order_details(oid)
+            if order:
+                order['order_items'] = items
+                orders.append(order)
+                
+    return render_template('guest_orders.html', orders=orders)
+
 # ==========================
 # AUTHENTICATION
 # ==========================
+
+@app.route('/guest_login')
+def guest_login():
+    next_url = request.args.get('next')
+    # Save cart before clearing
+    cart = session.get('cart')
+    session.clear()
+    if cart:
+        session['cart'] = cart
+    session['is_guest'] = True
+    flash('You are now in Guest Mode. You can browse and buy products.', 'success')
+    if next_url:
+        return redirect(next_url)
+    return redirect(url_for('home'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -747,21 +1055,31 @@ def login():
 
         if user:
             if check_password_hash(user['password_hash'], password):
+                # Complete login directly
                 session['user_id'] = user['user_id']
                 session['username'] = user['username']
                 session['role'] = user['role']
                 session.permanent = True
+
+                # Merge Guest Cart if exists
+                guest_cart = session.get('cart', {})
+                if guest_cart:
+                    for product_id, item in guest_cart.items():
+                        # Using add_to_cart_db which is the correct name in db_queries.py
+                        db_queries.add_to_cart_db(user['user_id'], int(product_id), item['quantity'])
+                    session.pop('cart', None) # Clear guest cart after merging
+                
+                # Link any previous guest orders from this email
+                db_queries.link_guest_orders_to_user(user['email'], user['user_id'])
+                
+                session.pop('is_guest', None) # No longer a guest
+
                 db_queries.add_log('Activity', user_id=user['user_id'], subject='User Login', content=f"User {user['username']} logged in successfully.")
                 flash('Login successful!', 'success')
 
                 if user['role'] == 'admin':
                     return redirect(url_for('admin_dashboard'))
                 
-                # Check for 'next' parameter to redirect back
-                next_url = request.args.get('next')
-                if next_url:
-                    return redirect(next_url)
-                    
                 return redirect(url_for('home'))
             else:
                 flash('Invalid password.', 'danger')
@@ -792,23 +1110,82 @@ def register():
             flash(f"Email verification failed: {str(e)}. Please provide a real and existing email address.", 'danger')
             return render_template('register.html')
 
+        # Check if email already exists
+        if db_queries.get_user_by_email(email):
+            flash("Email already registered. Please login.", "warning")
+            return redirect(url_for('login'))
+
         hashed_password = generate_password_hash(password)
 
-        success, message = db_queries.create_user(username, email, hashed_password)
+        # Generate OTP for registration
+        otp = ''.join(random.choices(string.digits, k=6))
         
-        if success:
-            # Simulate Welcome Email
-            db_queries.add_log('Email', recipient=email, subject='Welcome to NK Automobiles!', content=f"Hello {username}, welcome to NK Automobiles. Your account has been created successfully.")
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('login'))
-        else:
-             flash(f"Error: {message}", 'danger')
+        # Store in session
+        session['pending_user'] = {
+            'username': username,
+            'email': email,
+            'password_hash': hashed_password
+        }
+        session['registration_otp'] = otp
+        
+        # Send Actual Email with OTP
+        email_content = f"Hello {username},\n\nYour OTP for registration at NK Automobiles is: {otp}\n\nThis OTP is valid for a limited time. Please do not share it with anyone."
+        email_sent = send_email('NK Automobiles - Registration OTP', email, email_content)
+        
+        db_queries.add_log('Email', recipient=email, subject='Registration OTP', content=f"OTP {otp} {'sent successfully' if email_sent else 'failed to send but was generated'}")
+        
+        flash('An OTP has been sent to your email. Please enter it to complete registration.', 'info')
+        return redirect(url_for('verify_otp'))
 
     return render_template('register.html')
+
+@app.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    if 'pending_user' not in session or 'registration_otp' not in session:
+        flash("No active registration found. Please register again.", "warning")
+        return redirect(url_for('register'))
+        
+    if request.method == 'POST':
+        user_otp = request.form.get('otp')
+        
+        if user_otp == session.get('registration_otp'):
+            # OTP verified, create user
+            user_data = session['pending_user']
+            success, message = db_queries.create_user(
+                user_data['username'], 
+                user_data['email'], 
+                user_data['password_hash']
+            )
+            
+            if success:
+                # Log success
+                user = db_queries.get_user_by_email(user_data['email'])
+                if user:
+                    db_queries.link_guest_orders_to_user(user['email'], user['user_id'])
+                
+                db_queries.add_log('Email', recipient=user_data['email'], subject='Welcome to NK Automobiles!', content=f"Hello {user_data['username']}, your account has been created.")
+                
+                # Clear session
+                session.pop('pending_user', None)
+                session.pop('registration_otp', None)
+                
+                flash('Email verified! Registration successful. Please login.', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash(f"Error creating account: {message}", 'danger')
+        else:
+            flash('Invalid OTP. Please check your email and try again.', 'danger')
+            
+    return render_template('verify_otp.html', email=session['pending_user']['email'])
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
+    if 'user_id' not in session:
+        flash("Please login to view your profile.", "info")
+        return redirect(url_for('login'))
+        
     if request.method == 'POST':
         data = {
             'full_name': request.form.get('full_name'),
@@ -831,19 +1208,33 @@ def profile():
     return render_template('profile.html', user=user, orders=orders)
 
 @app.route('/order/<int:order_id>/cancel', methods=['POST'])
-@login_required
 def cancel_order(order_id):
-    user_id = session['user_id']
+    user_id = session.get('user_id')
+    is_guest = session.get('is_guest')
+    guest_order_ids = session.get('guest_order_ids', [])
     
-    # Verify order belongs to user and is Pending
+    # Verify order belongs to user or is in guest session
     order, items = db_queries.get_order_details(order_id)
-    if not order or order['user_id'] != user_id:
+    if not order:
+        flash("Order not found.", "danger")
+        return redirect(url_for('home'))
+
+    # Permission check
+    has_permission = False
+    if user_id and order['user_id'] == user_id:
+        has_permission = True
+    elif order_id in guest_order_ids:
+        has_permission = True
+    elif session.get('last_order_id') == order_id:
+        has_permission = True
+
+    if not has_permission:
         flash("Unauthorized action.", "danger")
-        return redirect(url_for('profile'))
+        return redirect(url_for('home'))
         
-    if order['status'] != 'Pending':
-        flash("Only pending orders can be cancelled.", "warning")
-        return redirect(url_for('profile'))
+    if order['status'] not in ['Pending', 'Payment Pending']:
+        flash("This order cannot be cancelled in its current state.", "warning")
+        return redirect(url_for('my_orders' if not user_id else 'profile'))
         
     # Update status and log
     success, message = db_queries.update_order_status(order_id, 'Cancelled')
@@ -870,34 +1261,70 @@ def cancel_order(order_id):
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form['email']
+        email = request.form['email'].lower().strip()
         user = db_queries.get_user_by_email(email)
         
         if user:
-            token = str(uuid.uuid4())
-            expiry = datetime.now() + timedelta(hours=1)
+            # Generate 6-digit OTP
+            otp = ''.join(random.choices(string.digits, k=6))
+            expiry = datetime.now() + timedelta(minutes=15) # 15 minutes validity
             
-            if db_queries.set_reset_token(email, token, expiry):
-                # MOCK EMAIL SENDING
-                reset_link = url_for('reset_password', token=token, _external=True)
-                print(f"\n[MOCK EMAIL] Password Reset Link for {email}: {reset_link}\n")
-                flash(f"Password reset link has been sent to {email} (Check Server Console)", "info")
+            if db_queries.set_reset_token(email, otp, expiry):
+                # Send Password Reset OTP Email
+                email_content = f"Hello {user['username']},\n\nYour OTP for resetting your NK Automobiles password is: {otp}\n\nThis OTP is valid for 15 minutes. Please do not share it with anyone."
+                email_sent = send_email('NK Automobiles - Password Reset OTP', email, email_content)
+                
+                db_queries.add_log('Email', recipient=email, subject='Password Reset OTP', content=f"Reset OTP {otp} {'sent' if email_sent else 'failed to send'} to {email}")
+                print(f"\n[RESET OTP] {otp} for {email}: {'Sent' if email_sent else 'Failed'}\n")
+                
+                session['reset_email'] = email
+                flash(f"A 6-digit OTP has been sent to {email}. Please enter it to verify.", "info")
+                return redirect(url_for('verify_reset_otp'))
             else:
-                 flash("Error generating reset token.", "danger")
+                 flash("Error generating reset OTP.", "danger")
         else:
-            # Don't reveal if user exists or not for security, but for now we can suffice with a generic message
-            flash("If that email is registered, a reset link has been sent.", "info")
+            flash("If that email is registered, an OTP has been sent.", "info")
             
         return redirect(url_for('login'))
         
     return render_template('forgot_password.html')
 
-@app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    user = db_queries.get_user_by_reset_token(token)
+@app.route('/verify-reset-otp', methods=['GET', 'POST'])
+def verify_reset_otp():
+    if 'reset_email' not in session:
+        flash("Please request a password reset first.", "warning")
+        return redirect(url_for('forgot_password'))
+        
+    if request.method == 'POST':
+        otp = request.form.get('otp')
+        email = session['reset_email']
+        
+        user = db_queries.get_user_by_email(email)
+        if user and user.get('reset_token') == otp:
+            # Check expiry
+            if user['reset_token_expiry'] and user['reset_token_expiry'] > datetime.now():
+                session['otp_verified'] = True
+                flash("OTP verified. Please set your new password.", "success")
+                return redirect(url_for('reset_password'))
+            else:
+                flash("OTP has expired. Please request a new one.", "danger")
+                return redirect(url_for('forgot_password'))
+        else:
+            flash("Invalid OTP. Please try again.", "danger")
+            
+    return render_template('verify_reset_otp.html')
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if 'reset_email' not in session or not session.get('otp_verified'):
+        flash("Please verify your OTP first.", "warning")
+        return redirect(url_for('forgot_password'))
+        
+    email = session['reset_email']
+    user = db_queries.get_user_by_email(email)
     
     if not user:
-        flash("Invalid or expired reset token.", "danger")
+        flash("User not found.", "danger")
         return redirect(url_for('login'))
         
     if request.method == 'POST':
@@ -909,12 +1336,16 @@ def reset_password(token):
         else:
             hashed_password = generate_password_hash(password)
             if db_queries.update_password(user['user_id'], hashed_password):
+                # Clear reset data
+                db_queries.set_reset_token(email, None, None)
+                session.pop('reset_email', None)
+                session.pop('otp_verified', None)
                 flash("Your password has been reset successfully. Please login.", "success")
                 return redirect(url_for('login'))
             else:
                 flash("Error updating password.", "danger")
                 
-    return render_template('reset_password.html', token=token)
+    return render_template('reset_password.html')
 
 @app.route('/logout')
 def logout():
@@ -997,16 +1428,23 @@ def admin_orders():
     orders = []
     if conn:
         cursor = conn.cursor(dictionary=True)
-        query = "SELECT o.*, u.username, u.email FROM orders o JOIN users u ON o.user_id = u.user_id WHERE 1=1"
+        query = """
+            SELECT o.*, 
+                   COALESCE(u.username, o.full_name) as display_name,
+                   COALESCE(o.email, u.email) as customer_email
+            FROM orders o 
+            LEFT JOIN users u ON o.user_id = u.user_id 
+            WHERE 1=1
+        """
         params = []
         
         if status_filter:
             query += " AND o.status = %s"
             params.append(status_filter)
         if search_query:
-            query += " AND (o.order_id LIKE %s OR u.username LIKE %s OR u.email LIKE %s)"
+            query += " AND (o.order_id LIKE %s OR u.username LIKE %s OR u.email LIKE %s OR o.full_name LIKE %s OR o.email LIKE %s)"
             search_term = f"%{search_query}%"
-            params.extend([search_term, search_term, search_term])
+            params.extend([search_term, search_term, search_term, search_term, search_term])
             
         query += " ORDER BY o.created_at DESC"
         cursor.execute(query, tuple(params))
@@ -1031,8 +1469,8 @@ def admin_export_orders():
     for o in orders:
         writer.writerow([
             o['order_id'], 
-            o['username'], 
-            o['email'], 
+            o['display_name'], 
+            o['customer_email'], 
             o['total_amount'], 
             o['status'], 
             o['created_at'].strftime('%Y-%m-%d %H:%M:%S') if o['created_at'] else ''
@@ -1068,9 +1506,9 @@ def admin_order_detail(order_id):
     if conn:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT o.*, u.username, u.email
+            SELECT o.*, u.username, u.email as user_email
             FROM orders o
-            JOIN users u ON o.user_id = u.user_id
+            LEFT JOIN users u ON o.user_id = u.user_id
             WHERE o.order_id = %s
         """, (order_id,))
         order = cursor.fetchone()
@@ -1108,8 +1546,19 @@ def admin_update_order_status(order_id):
         # Get order to send email
         order, _ = db_queries.get_order_details(order_id)
         if order:
+            # Use the email from order if available, otherwise phone_number (though add_log expecting email for 'Email' type)
+            recipient_email = order.get('email')
+            if not recipient_email:
+                # Fallback to fetching user email if it's a member order
+                if order.get('user_id'):
+                    user = db_queries.get_user_by_id(order['user_id'])
+                    if user: recipient_email = user['email']
+            
+            # If still no email, use phone (less ideal for 'Email' type log but best effort)
+            final_recipient = recipient_email if recipient_email else order['phone_number']
+            
             db_queries.add_log('Activity', user_id=session['user_id'], subject='Order Status Update', content=f"Order #{order_id} changed to {new_status}.")
-            db_queries.add_log('Email', recipient=order['phone_number'], subject=f"Order Update #{order_id}", content=f"Your order status has been updated to: {new_status}. {f'Courier: {courier_name}, Tracking: {tracking_number}' if tracking_number else ''}")
+            db_queries.add_log('Email', recipient=final_recipient, subject=f"Order Update #{order_id}", content=f"Your order status has been updated to: {new_status}. {f'Courier: {courier_name}, Tracking: {tracking_number}' if tracking_number else ''}")
         
         flash(f'Order #{order_id} updated.', 'success')
     else:

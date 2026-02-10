@@ -1,19 +1,42 @@
+# Northern Automobiles Database Queries
 import mysql.connector
+from datetime import datetime
 from mysql.connector import Error
+import os
+from dotenv import load_dotenv
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'Shri@2004',
-    'database': 'nk_automobiles'
-}
+load_dotenv()
 
 def get_db_connection():
     try:
-        return mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(
+            host=os.getenv('DB_HOST', 'localhost'),
+            user=os.getenv('DB_USER', 'root'),
+            password=os.getenv('DB_PASSWORD', ''),
+            database=os.getenv('DB_NAME', 'nk_automobiles')
+        )
+        return conn
     except Error as e:
-        print("Database connection error:", e)
+        print(f"Error connecting to MySQL: {e}")
         return None
+
+# Ensure Email column exists in orders for Guest support
+def ensure_order_email_column():
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SHOW COLUMNS FROM orders LIKE 'email'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE orders ADD COLUMN email VARCHAR(100) AFTER user_id")
+                conn.commit()
+        except Error as e:
+            print(f"Error updating schema: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
+ensure_order_email_column()
 
 # ==========================
 # PRODUCT QUERIES
@@ -361,16 +384,17 @@ def get_order_for_tracking(order_id, email_or_phone):
     query = """
         SELECT o.*, u.email as user_email
         FROM orders o
-        JOIN users u ON o.user_id = u.user_id
+        LEFT JOIN users u ON o.user_id = u.user_id
         WHERE o.order_id = %s 
         AND (
-            LOWER(u.email) = LOWER(%s) 
+            (u.email IS NOT NULL AND LOWER(u.email) = LOWER(%s))
+            OR (o.email IS NOT NULL AND LOWER(o.email) = LOWER(%s))
             OR o.phone_number = %s 
-            OR u.phone = %s
+            OR (u.phone IS NOT NULL AND u.phone = %s)
         )
     """
     
-    cursor.execute(query, (order_id, email_or_phone, email_or_phone, email_or_phone))
+    cursor.execute(query, (order_id, email_or_phone, email_or_phone, email_or_phone, email_or_phone))
     order = cursor.fetchone()
     
     items = []
@@ -430,9 +454,9 @@ def create_order(user_id, order_data):
         order_status = 'Payment Pending' if order_data.get('payment_method') in ['UPI', 'UPI_QR'] else 'Pending'
         
         cursor.execute("""
-            INSERT INTO orders (user_id, full_name, phone_number, address_line1, address_line2, city, state, pincode, total_amount, payment_method, transaction_id, status, discount_amount, coupon_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (user_id, order_data['full_name'], order_data['phone'], order_data['addr1'], order_data['addr2'], order_data['city'], order_data['state'], order_data['pincode'], final_total, order_data.get('payment_method', 'COD'), order_data.get('transaction_id', ''), order_status, discount_amount, applied_coupon_id))
+            INSERT INTO orders (user_id, email, full_name, phone_number, address_line1, address_line2, city, state, pincode, total_amount, payment_method, transaction_id, payment_screenshot, status, discount_amount, coupon_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (user_id, order_data['email'], order_data['full_name'], order_data['phone'], order_data['addr1'], order_data['addr2'], order_data['city'], order_data['state'], order_data['pincode'], final_total, order_data.get('payment_method', 'COD'), order_data.get('transaction_id', ''), order_data.get('payment_screenshot', None), order_status, discount_amount, applied_coupon_id))
         order_id = cursor.lastrowid
         
         # Track Coupon Usage
@@ -594,26 +618,28 @@ def get_dashboard_stats():
     cursor.execute("SELECT COUNT(*) as c FROM products WHERE stock_quantity < 10")
     stats['low_stock'] = cursor.fetchone()['c']
     
-    # 2. Revenue stats (Excluding Cancelled orders)
-    cursor.execute("SELECT SUM(total_amount) as total FROM orders WHERE status != 'Cancelled'")
+    # 2. Revenue stats (Only Paid Orders: Delivered for all, or Confirmed/Shipped for prepaid)
+    paid_condition = "(status = 'Delivered' OR (payment_method != 'COD' AND status IN ('Confirmed', 'Shipped')))"
+    
+    cursor.execute(f"SELECT SUM(total_amount) as total FROM orders WHERE {paid_condition}")
     res = cursor.fetchone()
     stats['total_revenue'] = float(res['total']) if res['total'] else 0.0
     
     # 3. Monthly Sales
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT SUM(total_amount) as total 
         FROM orders 
-        WHERE status != 'Cancelled' 
+        WHERE {paid_condition}
         AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     """)
     res_month = cursor.fetchone()
     stats['monthly_revenue'] = float(res_month['total']) if res_month['total'] else 0.0
     
     # 4. Monthly Growth (Simplistic comparison)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT SUM(total_amount) as total 
         FROM orders 
-        WHERE status != 'Cancelled' 
+        WHERE {paid_condition} 
         AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)
         AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
     """)
@@ -626,10 +652,10 @@ def get_dashboard_stats():
         stats['growth'] = 100 if stats['monthly_revenue'] > 0 else 0
 
     # 5. Daily Sales Trend (Last 14 Days)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT DATE(created_at) as date, SUM(total_amount) as total
         FROM orders
-        WHERE status != 'Cancelled'
+        WHERE {paid_condition}
         AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
         GROUP BY DATE(created_at)
         ORDER BY date ASC
@@ -936,20 +962,27 @@ def set_reset_token(email, token, expiry):
     if not conn: return False
     cursor = conn.cursor()
     cursor.execute("UPDATE users SET reset_token = %s, reset_token_expiry = %s WHERE email = %s", (token, expiry, email))
+    rows_affected = cursor.rowcount
     conn.commit()
     cursor.close()
     conn.close()
-    return True
+    return rows_affected > 0
 
 def get_user_by_reset_token(token):
     conn = get_db_connection()
     if not conn: return None
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE reset_token = %s AND reset_token_expiry > NOW()", (token,))
+    # Using a slightly more relaxed check or ensuring we compare correctly
+    cursor.execute("SELECT * FROM users WHERE reset_token = %s", (token,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
-    return user
+    
+    if user:
+        # Check expiry in Python to be safe with timezones
+        if user['reset_token_expiry'] and user['reset_token_expiry'] > datetime.now():
+            return user
+    return None
 
 def update_password(user_id, password_hash):
     conn = get_db_connection()
@@ -966,9 +999,11 @@ def get_all_orders():
     if not conn: return []
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT o.*, u.username, u.email 
+        SELECT o.*, 
+               COALESCE(u.username, o.full_name) as display_name,
+               COALESCE(o.email, u.email) as customer_email
         FROM orders o 
-        JOIN users u ON o.user_id = u.user_id 
+        LEFT JOIN users u ON o.user_id = u.user_id 
         ORDER BY o.created_at DESC
     """)
     orders = cursor.fetchall()
@@ -1158,6 +1193,27 @@ def delete_contact_message(message_id):
         return True, "Message deleted"
     except Error as e:
         return False, str(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def link_guest_orders_to_user(email, user_id):
+    """Links all orders with the given email and NULL user_id to the specified user account."""
+    conn = get_db_connection()
+    if not conn: return False
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE orders 
+            SET user_id = %s 
+            WHERE (email = %s OR phone_number IN (SELECT phone FROM users WHERE user_id = %s))
+            AND user_id IS NULL
+        """, (user_id, email, user_id))
+        conn.commit()
+        return True
+    except Error as e:
+        print(f"Error linking guest orders: {e}")
+        return False
     finally:
         cursor.close()
         conn.close()

@@ -70,7 +70,9 @@
                     <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Order Status</h5>
                 </div>
                 <div class="card-body text-center">
-                    {% if order.status == 'Pending' %}
+                    {% if order.status == 'Payment Pending' %}
+                    <span class="badge bg-soft-info text-info border border-info fs-4 px-4 py-2">Payment Pending</span>
+                    {% elif order.status == 'Pending' %}
                     <span class="badge bg-warning text-dark fs-4 px-4 py-2">Pending</span>
                     {% elif order.status == 'Confirmed' %}
                     <span class="badge bg-info fs-4 px-4 py-2">Confirmed</span>
@@ -100,6 +102,8 @@
 
                                 <label class="form-label text-start">Status</label>
                                 <select name="status" class="form-select mb-2">
+                                    <option value="Payment Pending" {% if order.status=='Payment Pending' %}selected{%
+                                        endif %}>Payment Pending</option>
                                     <option value="Pending" {% if order.status=='Pending' %}selected{% endif %}>Pending
                                     </option>
                                     <option value="Confirmed" {% if order.status=='Confirmed' %}selected{% endif %}>
@@ -125,6 +129,40 @@
                 </div>
             </div>
 
+            <!-- Payment Details -->
+            {% if order.payment_method == 'UPI_QR' or order.payment_method == 'UPI' or order.transaction_id %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Verification</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Method:</strong> {{ order.payment_method }}</p>
+                    <p><strong>UTR/Transaction ID:</strong> <span class="text-primary fw-bold">{{ order.transaction_id
+                            or 'Not Provided' }}</span></p>
+
+                    {% if order.payment_screenshot %}
+                    <div class="mt-3">
+                        <p class="mb-2"><strong>Payment Screenshot:</strong></p>
+                        <a href="{{ url_for('static', filename='payments/' + order.payment_screenshot) }}"
+                            target="_blank">
+                            <img src="{{ url_for('static', filename='payments/' + order.payment_screenshot) }}"
+                                class="img-fluid rounded border shadow-sm"
+                                style="max-height: 250px; width: 100%; object-fit: contain;">
+                        </a>
+                        <div class="mt-2 text-center">
+                            <small class="text-muted"><i class="fas fa-search-plus me-1"></i> Click image to view full
+                                size</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning py-2 small mb-0">
+                        <i class="fas fa-exclamation-triangle me-1"></i> No screenshot uploaded
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Customer Card -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-dark text-white">
@@ -132,8 +170,8 @@
                 </div>
                 <div class="card-body">
                     <p><strong>Name:</strong> {{ order.full_name }}</p>
-                    <p><strong>Username:</strong> {{ order.username }}</p>
-                    <p><strong>Email:</strong> {{ order.email }}</p>
+                    <p><strong>User:</strong> {{ order.username or 'Guest User' }}</p>
+                    <p><strong>Email:</strong> {{ order.email or order.user_email }}</p>
                     <p><strong>Phone:</strong> {{ order.phone_number }}</p>
                 </div>
             </div>

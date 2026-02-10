@@ -53,6 +53,17 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('track_order') }}">Track Order</a></li>
                 </ul>
                 <ul class="navbar-nav ms-3 border-start ps-3 align-items-center">
+                    {% if session.role != 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{{ url_for('cart') }}">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size: 0.6rem;">{{ cart_count }}</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if session.user_id %}
                     {% if session.role == 'admin' %}
                     <li class="nav-item"><a class="nav-link text-warning"
@@ -64,19 +75,18 @@
                         </a>
                     </li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">My Profile</a></li>
-                    {% if session.role != 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link position-relative" href="{{ url_for('cart') }}">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                style="font-size: 0.6rem;">{{ cart_count }}</span>
-                        </a>
-                    </li>
-                    {% endif %}
                     <li class="nav-item"><a class="btn btn-sm btn-outline-primary ms-2"
                             href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
+                    {% if session.is_guest %}
+                    <li class="nav-item px-2"><span class="badge bg-secondary">Guest Mode</span></li>
+                    {% if session.guest_order_ids %}
+                    <li class="nav-item"><a class="nav-link fw-bold" href="{{ url_for('my_orders') }}"><i
+                                class="fas fa-list-alt me-1"></i> My Orders</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="btn btn-sm btn-outline-danger ms-2"
+                            href="{{ url_for('logout') }}">Exit Guest</a></li>
+                    {% endif %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
                     <li class="nav-item"><a class="btn btn-sm btn-primary ms-2"
                             href="{{ url_for('register') }}">Register</a></li>
