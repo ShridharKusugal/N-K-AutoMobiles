@@ -250,6 +250,25 @@
                                 <small class="text-muted" style="font-size: 0.72rem;">Direct Technician Chat</small>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Provenance & Fitment Summary Collapsible -->
+                <div class="card border-0 bg-light rounded-3 p-3 mt-3 shadow-sm">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle text-primary fs-5 me-2 mt-1"></i>
+                        <div class="small">
+                            <strong class="text-dark">Fitment & Authenticity Guarantee</strong>
+                            <p class="text-muted mb-1" style="font-size: 0.76rem;">
+                                Components are verified for Indian two-wheeler variants. Please confirm your vehicle model year and BS variant below.
+                            </p>
+                            {% if product.image_source_page or product.image_source_url %}
+                            <a href="{{ product.image_source_page or product.image_source_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none small text-primary fw-semibold" style="font-size: 0.75rem;">
+                                <i class="fas fa-external-link-alt me-1"></i>Reference Source Archive
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -487,6 +506,22 @@
                 </div>
                 {% endif %}
 
+                <!-- Delivery & Local Pickup Notice Card -->
+                <div class="card bg-light border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-primary text-white p-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                                <i class="fas fa-truck-ramp-box"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold mb-0 text-dark">Local Pickup & Express Delivery</h6>
+                                <p class="small text-muted mb-0">
+                                    Instant physical counter pickup at <strong>NK Automobiles Hubballi</strong>. Courier shipping dispatched within 24 hours across Karnataka.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
