@@ -208,20 +208,6 @@
                     </span>
                     {% endif %}
 
-                    {% if product.image_status == 'VERIFIED_PRODUCT_IMAGE' %}
-                    <span class="badge bg-success position-absolute top-0 start-0 m-3 px-3 py-2 shadow-sm rounded-pill" style="z-index: 3;">
-                        <i class="fas fa-camera-retro me-1"></i>Verified Photograph
-                    </span>
-                    {% elif product.image_status == 'IMAGE_FOUND_NEEDS_MANUAL_REVIEW' %}
-                    <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-3 px-3 py-2 shadow-sm rounded-pill" style="z-index: 3;">
-                        <i class="fas fa-exclamation-triangle me-1"></i>Reference Visual
-                    </span>
-                    {% else %}
-                    <span class="badge bg-secondary position-absolute top-0 start-0 m-3 px-3 py-2 shadow-sm rounded-pill" style="z-index: 3;">
-                        <i class="fas fa-tools me-1"></i>OEM Catalog Asset
-                    </span>
-                    {% endif %}
-
                     <img src="{{ get_product_image_url(product.image_url) }}"
                         class="main-product-img img-fluid" alt="{{ product.name }}"
                         onerror="handleImageError(this, '{{ product.name }}')">

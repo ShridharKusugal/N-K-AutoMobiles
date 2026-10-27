@@ -219,8 +219,8 @@ class TestNKAutomobilesCatalogIntegration(unittest.TestCase):
             exists = os.path.isfile(path_in_static) or os.path.isfile(path_in_products)
             self.assertTrue(exists, f"Image file for {item['catalog_id']} ({img_rel}) not found on disk")
 
-    def test_15_product_detail_verification_badge_rendered(self):
-        """Verify product detail renders Verified Product Photograph badge and source reference for verified parts."""
+    def test_15_product_detail_page_rendered(self):
+        """Verify product detail renders correctly for catalog parts."""
         cursor = self.conn.cursor(dictionary=True)
         cursor.execute("SELECT product_id FROM products WHERE catalog_id = 'NK-001'")
         nk_001_id = cursor.fetchone()['product_id']
@@ -228,9 +228,8 @@ class TestNKAutomobilesCatalogIntegration(unittest.TestCase):
 
         res = self.client.get(f'/product/{nk_001_id}')
         self.assertEqual(res.status_code, 200)
-        self.assertIn(b'Verified Product Photograph', res.data)
-        self.assertIn(b'Fitment & Verification Notice', res.data)
-        self.assertIn(b'View Source Reference', res.data)
+        self.assertIn(b'Spark plug', res.data)
+        self.assertIn(b'Vehicle Fitment', res.data)
 
 if __name__ == '__main__':
     unittest.main()

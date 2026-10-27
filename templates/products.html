@@ -289,20 +289,6 @@
                             <span class="badge bg-danger position-absolute top-0 end-0 m-2 badge-stock">Low Stock</span>
                             {% endif %}
 
-                            {% if product.image_status == 'VERIFIED_PRODUCT_IMAGE' %}
-                            <span class="badge bg-success bg-opacity-90 text-white position-absolute bottom-0 start-0 m-2 shadow-sm" style="font-size: 0.62rem; z-index: 2;" title="Verified genuine product photograph">
-                                <i class="fas fa-check-circle me-1"></i>Verified Photo
-                            </span>
-                            {% elif product.image_status == 'IMAGE_FOUND_NEEDS_MANUAL_REVIEW' %}
-                            <span class="badge bg-warning text-dark position-absolute bottom-0 start-0 m-2 shadow-sm" style="font-size: 0.62rem; z-index: 2;" title="Online catalog reference listing — requires physical counter verification">
-                                <i class="fas fa-search me-1"></i>Ref Photo
-                            </span>
-                            {% elif product.image_status == 'PLACEHOLDER_IMAGE' or product.image_status == 'PLACEHOLDER_NOT_A_REAL_PRODUCT_PHOTO' %}
-                            <span class="badge bg-secondary bg-opacity-90 text-white position-absolute bottom-0 start-0 m-2 shadow-sm" style="font-size: 0.62rem; z-index: 2;" title="Catalog placeholder asset — genuine photograph pending physical intake">
-                                <i class="fas fa-camera me-1"></i>Photo Pending
-                            </span>
-                            {% endif %}
-
                             <img src="{{ get_product_image_url(product.image_url) }}"
                                 class="card-img-top" alt="{{ product.name }}"
                                 loading="lazy"
