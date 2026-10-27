@@ -79,13 +79,19 @@
                                     class="accordion-collapse collapse {% if selected_model %}show{% endif %}"
                                     data-bs-parent="#filterAccordion">
                                     <div class="accordion-body pt-0 px-3 pb-3">
-                                        <div class="model-list mt-2" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="pt-2 pb-2">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search fa-xs text-primary"></i></span>
+                                                <input type="text" class="form-control border-start-0 ps-0" id="filterModelSearch" placeholder="Search 45+ bikes/scooters..." onkeyup="filterSidebarModels()">
+                                            </div>
+                                        </div>
+                                        <div class="model-list mt-1" id="sidebarModelList" style="max-height: 240px; overflow-y: auto;">
                                             <div class="form-check mb-2">
                                                 <input class="form-check-input custom-check" type="radio" name="model" value="" id="model_all" {% if not selected_model %}checked{% endif %}>
-                                                <label class="form-check-label small fw-medium text-muted" for="model_all">All Models</label>
+                                                <label class="form-check-label small fw-medium text-muted" for="model_all">All Two-Wheelers</label>
                                             </div>
                                             {% for model in all_models %}
-                                            <div class="form-check mb-2">
+                                            <div class="form-check mb-2 sidebar-model-item">
                                                 <input class="form-check-input custom-check" type="radio"
                                                     name="model" value="{{ model }}" id="model_{{ loop.index }}" {% if
                                                     selected_model == model %}checked{% endif %}>
@@ -97,6 +103,17 @@
                                             {% endfor %}
                                         </div>
                                     </div>
+                                    <script>
+                                    function filterSidebarModels() {
+                                        var input = document.getElementById("filterModelSearch");
+                                        var filter = input.value.toLowerCase().trim();
+                                        var items = document.querySelectorAll(".sidebar-model-item");
+                                        items.forEach(function(item) {
+                                            var text = item.textContent.toLowerCase();
+                                            item.style.display = text.indexOf(filter) > -1 ? "" : "none";
+                                        });
+                                    }
+                                    </script>
                                 </div>
                             </div>
 

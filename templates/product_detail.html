@@ -605,11 +605,86 @@
                     </div>
 
                     {% if product.compatibility_list %}
-                    <!-- Live Search Box for Bike Models -->
+                    <!-- Interactive Instant Bike Compatibility Checker -->
+                    <div class="card border-0 bg-light rounded-3 p-3 mb-4 border shadow-sm">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-lg-5 col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">
+                                    <i class="fas fa-magnifying-glass text-primary me-1"></i>Check Your Motorcycle or Scooter:
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-motorcycle text-primary"></i></span>
+                                    <input list="indianTwoWheelersList" id="quickBikeCheckerInput" class="form-control border-start-0" placeholder="Type e.g. Pulsar 150, Activa 6G, R15, Classic 350, Access 125..." oninput="evaluateInstantFitment()">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="clearInstantFitment()"><i class="fas fa-times"></i></button>
+                                </div>
+                                <datalist id="indianTwoWheelersList">
+                                    <option value="Hero Splendor Plus">
+                                    <option value="Hero HF Deluxe">
+                                    <option value="Hero Passion Pro">
+                                    <option value="Hero Glamour 125">
+                                    <option value="Hero Super Splendor">
+                                    <option value="Hero Xpulse 200 4V">
+                                    <option value="Hero Xtreme 160R">
+                                    <option value="Hero Pleasure Plus">
+                                    <option value="Hero Destini 125">
+                                    <option value="Honda Activa 6G">
+                                    <option value="Honda Activa 125">
+                                    <option value="Honda Dio">
+                                    <option value="Honda Shine 125">
+                                    <option value="Honda SP 125">
+                                    <option value="Honda Unicorn 160">
+                                    <option value="Honda CB350 H'ness">
+                                    <option value="Bajaj Pulsar 150">
+                                    <option value="Bajaj Pulsar 125">
+                                    <option value="Bajaj Pulsar NS200">
+                                    <option value="Bajaj Pulsar 180">
+                                    <option value="Bajaj Pulsar 220F">
+                                    <option value="Bajaj Platina 100">
+                                    <option value="Bajaj CT 100">
+                                    <option value="Bajaj Avenger 220">
+                                    <option value="TVS Apache RTR 160">
+                                    <option value="TVS Apache RTR 200 4V">
+                                    <option value="TVS Raider 125">
+                                    <option value="TVS Jupiter 110">
+                                    <option value="TVS Jupiter 125">
+                                    <option value="TVS Ntorq 125">
+                                    <option value="TVS Sport">
+                                    <option value="TVS Radeon">
+                                    <option value="Yamaha R15">
+                                    <option value="Yamaha MT-15">
+                                    <option value="Yamaha FZ / FZ-S FI">
+                                    <option value="Yamaha RayZR 125">
+                                    <option value="Yamaha Fascino 125">
+                                    <option value="Royal Enfield Classic 350">
+                                    <option value="Royal Enfield Bullet 350">
+                                    <option value="Royal Enfield Hunter 350">
+                                    <option value="Royal Enfield Meteor 350">
+                                    <option value="Suzuki Access 125">
+                                    <option value="Suzuki Burgman Street">
+                                    <option value="Suzuki Gixxer 150">
+                                    <option value="KTM Duke 200">
+                                    <option value="KTM Duke 390">
+                                </datalist>
+                            </div>
+                            <div class="col-lg-7 col-md-6">
+                                <div id="instantFitmentVerdict" class="p-2 px-3 bg-white rounded border d-flex align-items-center justify-content-between" style="min-height: 48px;">
+                                    <div class="d-flex align-items-center gap-2" id="verdictContent">
+                                        <i class="fas fa-info-circle text-primary fs-5"></i>
+                                        <span class="small text-muted" id="verdictText">Type or select your two-wheeler to verify compatibility.</span>
+                                    </div>
+                                    <a id="verdictWhatsAppBtn" href="https://wa.me/919880423662?text=Hello%20NK%20Automobiles%2C%20does%20{{ product.name }}%20fit%20my%20vehicle%3F" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 ms-2" style="font-size: 0.76rem; white-space: nowrap;">
+                                        <i class="fab fa-whatsapp me-1"></i>Ask Counter
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Search Box for Bike Models in Table -->
                     <div class="mb-3">
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search text-primary"></i></span>
-                            <input type="text" id="bikeFilterInput" class="form-control border-start-0 py-2" placeholder="Search your motorcycle or scooter (e.g. Pulsar 150, Activa 6G, R15, Splendor, Classic 350)..." onkeyup="filterBikeTable()">
+                            <input type="text" id="bikeFilterInput" class="form-control border-start-0 py-2" placeholder="Search the full list of compatible models below..." onkeyup="filterBikeTable()">
                             <button class="btn btn-outline-secondary" type="button" onclick="clearBikeFilter()" id="clearBikeFilterBtn" style="display:none;"><i class="fas fa-times me-1"></i>Clear</button>
                         </div>
                     </div>
@@ -1073,6 +1148,88 @@ function switchToTab(tabId) {
     if (tabBtn) {
         var tab = new bootstrap.Tab(tabBtn);
         tab.show();
+    }
+}
+
+function evaluateInstantFitment() {
+    var input = document.getElementById("quickBikeCheckerInput");
+    if (!input) return;
+    var query = input.value.trim().toLowerCase();
+    var verdictContent = document.getElementById("verdictContent");
+    var waBtn = document.getElementById("verdictWhatsAppBtn");
+    var productName = {{ product.name|tojson }};
+    
+    if (!query) {
+        clearInstantFitment();
+        return;
+    }
+
+    var rows = document.querySelectorAll(".bike-row");
+    var matchFound = null;
+
+    rows.forEach(function(row) {
+        var modelElem = row.querySelector(".bike-model-name");
+        var notesElem = row.querySelector(".bike-notes");
+        var badgeElem = row.querySelector(".badge");
+        
+        var model = modelElem ? modelElem.textContent.trim() : "";
+        var notes = notesElem ? notesElem.textContent.trim() : "";
+        var status = badgeElem ? badgeElem.textContent.trim() : "Compatible";
+        
+        if (model.toLowerCase().includes(query) || query.includes(model.toLowerCase())) {
+            matchFound = { model: model, status: status, notes: notes };
+        }
+    });
+
+    if (matchFound) {
+        var isVerified = matchFound.status.toLowerCase().includes("verified") || matchFound.status.toLowerCase().includes("universal");
+        var iconClass = isVerified ? "fa-circle-check text-success" : "fa-triangle-exclamation text-warning";
+        var badgeColor = isVerified ? "text-success fw-bold" : "text-warning-emphasis fw-bold";
+        
+        verdictContent.innerHTML = `
+            <i class="fas ${iconClass} fs-4"></i>
+            <div>
+                <span class="${badgeColor} d-block" style="font-size:0.85rem;">${matchFound.status}: Fits ${matchFound.model}</span>
+                <small class="text-muted" style="font-size:0.75rem;">${matchFound.notes}</small>
+            </div>
+        `;
+        if (waBtn) {
+            waBtn.href = `https://wa.me/919880423662?text=Hello%20NK%20Automobiles%2C%20I%20am%20ordering%20${encodeURIComponent(productName)}%20for%20my%20${encodeURIComponent(matchFound.model)}.%20Please%20confirm%20counter%20pickup.`;
+            waBtn.className = "btn btn-sm btn-success rounded-pill px-3 py-1 ms-2";
+            waBtn.innerHTML = `<i class="fab fa-whatsapp me-1"></i>Order for ${matchFound.model.split(" ")[0]}`;
+        }
+    } else {
+        verdictContent.innerHTML = `
+            <i class="fas fa-circle-xmark text-danger fs-4"></i>
+            <div>
+                <span class="text-danger fw-bold d-block" style="font-size:0.85rem;">Not in verified list for this specific part</span>
+                <small class="text-muted" style="font-size:0.75rem;">This part is not matched to "${input.value}". Contact our Hubballi shop to check alternative parts.</small>
+            </div>
+        `;
+        if (waBtn) {
+            waBtn.href = `https://wa.me/919880423662?text=Hello%20NK%20Automobiles%2C%20does%20${encodeURIComponent(productName)}%20fit%20my%20${encodeURIComponent(input.value)}%3F%20Or%20do%20you%20have%20another%20part%20for%20it%3F`;
+            waBtn.className = "btn btn-sm btn-outline-danger rounded-pill px-3 py-1 ms-2";
+            waBtn.innerHTML = `<i class="fab fa-whatsapp me-1"></i>Ask for ${input.value.split(" ")[0] || "Bike"}`;
+        }
+    }
+}
+
+function clearInstantFitment() {
+    var input = document.getElementById("quickBikeCheckerInput");
+    if (input) input.value = "";
+    var verdictContent = document.getElementById("verdictContent");
+    var waBtn = document.getElementById("verdictWhatsAppBtn");
+    var productName = {{ product.name|tojson }};
+    if (verdictContent) {
+        verdictContent.innerHTML = `
+            <i class="fas fa-info-circle text-primary fs-5"></i>
+            <span class="small text-muted" id="verdictText">Type or select your two-wheeler to verify compatibility.</span>
+        `;
+    }
+    if (waBtn) {
+        waBtn.href = `https://wa.me/919880423662?text=Hello%20NK%20Automobiles%2C%20does%20${encodeURIComponent(productName)}%20fit%20my%20vehicle%3F`;
+        waBtn.className = "btn btn-sm btn-outline-success rounded-pill px-3 py-1 ms-2";
+        waBtn.innerHTML = `<i class="fab fa-whatsapp me-1"></i>Ask Counter`;
     }
 }
 </script>
