@@ -14,20 +14,30 @@
                     </h4>
                 </div>
                 <div class="card-body p-4">
-                    <form method="POST"
+                    <form method="POST" enctype="multipart/form-data"
                         action="{{ url_for('admin_edit_product', product_id=product.product_id) if product else url_for('admin_add_product') }}">
                         <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="catalog_id" class="form-label fw-bold">Catalog SKU / ID</label>
+                                <input type="text" class="form-control" id="catalog_id" name="catalog_id"
+                                    value="{{ product.catalog_id if product and product.catalog_id else '' }}" placeholder="e.g. NK-001">
+                            </div>
                             <div class="col-md-8">
                                 <label for="name" class="form-label fw-bold">Product Name *</label>
                                 <input type="text" class="form-control" id="name" name="name"
                                     value="{{ product.name if product else '' }}" required>
                             </div>
                             <div class="col-md-4">
-                                <label for="brand" class="form-label fw-bold">Brand *</label>
+                                <label for="brand" class="form-label fw-bold">Brand</label>
                                 <input type="text" class="form-control" id="brand" name="brand"
-                                    value="{{ product.brand if product else '' }}" required>
+                                    value="{{ product.brand if product and product.brand else '' }}" placeholder="e.g., Honda, Hero, Pakilo">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="part_number" class="form-label fw-bold">Part Number (OEM / Mfr)</label>
+                                <input type="text" class="form-control" id="part_number" name="part_number"
+                                    value="{{ product.part_number if product and product.part_number else '' }}" placeholder="e.g., 88110AAEH31S">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="category_id" class="form-label fw-bold">Category *</label>
                                 <select class="form-select" id="category_id" name="category_id" required>
                                     <option value="">Select Category</option>
@@ -39,34 +49,115 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label for="price" class="form-label fw-bold">Price (₹) *</label>
+                            <div class="col-md-4">
+                                <label for="price" class="form-label fw-bold">Selling Price (₹)</label>
                                 <input type="number" step="0.01" class="form-control" id="price" name="price"
-                                    value="{{ product.price if product else '' }}" required>
+                                    value="{{ product.price if product and product.price is not none else '' }}" placeholder="Leave blank if quote required">
+                                <small class="text-muted">Optional if quote is required</small>
                             </div>
-                            <div class="col-md-3">
-                                <label for="stock_quantity" class="form-label fw-bold">Stock *</label>
+                            <div class="col-md-4">
+                                <label for="price_status" class="form-label fw-bold">Price Verification Status</label>
+                                <select class="form-select" id="price_status" name="price_status">
+                                    <option value="VERIFIED_SELLING_PRICE" {% if not product or product.price_status == 'VERIFIED_SELLING_PRICE' %}selected{% endif %}>Verified Selling Price</option>
+                                    <option value="ONLINE_LISTING_PRICE_NOT_HUBBALLI_VERIFIED" {% if product and product.price_status == 'ONLINE_LISTING_PRICE_NOT_HUBBALLI_VERIFIED' %}selected{% endif %}>Online Ref (Not Hubballi Verified)</option>
+                                    <option value="HUBBALLI_QUOTE_REQUIRED" {% if product and product.price_status == 'HUBBALLI_QUOTE_REQUIRED' %}selected{% endif %}>Hubballi Quote Required</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="stock_quantity" class="form-label fw-bold">Stock Quantity</label>
                                 <input type="number" class="form-control" id="stock_quantity" name="stock_quantity"
-                                    value="{{ product.stock_quantity if product else '0' }}" required>
+                                    value="{{ product.stock_quantity if product and product.stock_quantity is not none else '0' }}">
                             </div>
                             <div class="col-12">
                                 <label for="description" class="form-label fw-bold">Description</label>
                                 <textarea class="form-control" id="description" name="description"
                                     rows="3">{{ product.description if product else '' }}</textarea>
                             </div>
+                            <div class="col-md-6">
+                                <label for="fitment_status" class="form-label fw-bold">Fitment Verification Status</label>
+                                <select class="form-select" id="fitment_status" name="fitment_status">
+                                    <option value="VERIFIED" {% if not product or product.fitment_status == 'VERIFIED' %}selected{% endif %}>Verified Fit</option>
+                                    <option value="Requires model-year confirmation" {% if product and product.fitment_status == 'Requires model-year confirmation' %}selected{% endif %}>Requires model-year confirmation</option>
+                                    <option value="Requires confirmation" {% if product and product.fitment_status == 'Requires confirmation' %}selected{% endif %}>Requires confirmation</option>
+                                </select>
+                            </div>
+
+                            <!-- Product Photograph & Provenance Management -->
                             <div class="col-12">
-                                <label for="specifications" class="form-label fw-bold">Specifications</label>
-                                <textarea class="form-control" id="specifications" name="specifications" rows="4"
-                                    placeholder="Format: Key: Value (one per line)">{{ product.specifications if product and product.specifications else '' }}</textarea>
-                                <small class="text-muted">Enter each specification on a new line as <strong>Key:
-                                        Value</strong> (e.g., Material: Steel)</small>
+                                <div class="card border bg-light p-3 rounded-3">
+                                    <h6 class="fw-bold mb-3"><i class="fas fa-camera text-primary me-2"></i>Product Photograph & Image Provenance</h6>
+                                    
+                                    <div class="row g-3 align-items-center">
+                                        {% if product and product.image_url %}
+                                        <div class="col-md-3 text-center">
+                                            <div class="p-2 border rounded bg-white">
+                                                <img src="{{ get_product_image_url(product.image_url) }}"
+                                                    class="img-fluid rounded" style="max-height: 110px; object-fit: contain;"
+                                                    alt="Current Product Image" onerror="handleImageError(this, '{{ product.name }}')">
+                                            </div>
+                                            <small class="text-muted d-block mt-1">Current Image</small>
+                                        </div>
+                                        <div class="col-md-9">
+                                        {% else %}
+                                        <div class="col-12">
+                                        {% endif %}
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <label for="image_file" class="form-label fw-bold small">Upload Real Part Photograph</label>
+                                                    <input type="file" class="form-control form-control-sm" id="image_file" name="image_file" accept=".png,.jpg,.jpeg,.webp">
+                                                    <small class="text-muted">PNG, JPG, or WEBP (Max 5MB)</small>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="image_url" class="form-label fw-bold small">Image Relative Path</label>
+                                                    <input type="text" class="form-control form-control-sm" id="image_url" name="image_url"
+                                                        value="{{ product.image_url if product else 'placeholder_part.svg' }}"
+                                                        placeholder="e.g. motorcycle_parts/Products/hero-splendor-spark-plug.jpg">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="image_status" class="form-label fw-bold small">Image Status</label>
+                                                    <select class="form-select form-select-sm" id="image_status" name="image_status">
+                                                        <option value="VERIFIED_PRODUCT_IMAGE" {% if product and product.image_status == 'VERIFIED_PRODUCT_IMAGE' %}selected{% endif %}>VERIFIED_PRODUCT_IMAGE (Authentic Photo)</option>
+                                                        <option value="IMAGE_FOUND_NEEDS_MANUAL_REVIEW" {% if product and product.image_status == 'IMAGE_FOUND_NEEDS_MANUAL_REVIEW' %}selected{% endif %}>IMAGE_FOUND_NEEDS_MANUAL_REVIEW (Needs Counter Check)</option>
+                                                        <option value="PLACEHOLDER_IMAGE" {% if not product or product.image_status in ['PLACEHOLDER_IMAGE', 'PLACEHOLDER_NOT_A_REAL_PRODUCT_PHOTO'] %}selected{% endif %}>PLACEHOLDER_IMAGE (Physical Intake Pending)</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="image_rights_status" class="form-label fw-bold small">Image Rights / License</label>
+                                                    <input type="text" class="form-control form-control-sm" id="image_rights_status" name="image_rights_status"
+                                                        value="{{ product.image_rights_status if product and product.image_rights_status else 'Proprietary / Counter Photo' }}"
+                                                        placeholder="e.g., CC BY 4.0, Public Domain, Proprietary">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="image_source_page" class="form-label fw-bold small">Source / Documentation Page URL</label>
+                                                    <input type="url" class="form-control form-control-sm" id="image_source_page" name="image_source_page"
+                                                        value="{{ product.image_source_page if product and product.image_source_page else '' }}"
+                                                        placeholder="https://commons.wikimedia.org/wiki/File:...">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="image_source_type" class="form-label fw-bold small">Source Category</label>
+                                                    <select class="form-select form-select-sm" id="image_source_type" name="image_source_type">
+                                                        <option value="Local Counter Photo" {% if product and product.image_source_type == 'Local Counter Photo' %}selected{% endif %}>Local Counter Photo</option>
+                                                        <option value="Wikimedia Commons Photograph" {% if product and product.image_source_type == 'Wikimedia Commons Photograph' %}selected{% endif %}>Wikimedia Commons Photograph</option>
+                                                        <option value="Manufacturer Reference" {% if product and product.image_source_type == 'Manufacturer Reference' %}selected{% endif %}>Manufacturer Reference</option>
+                                                        <option value="Stock Asset Placeholder" {% if not product or product.image_source_type == 'Stock Asset Placeholder' %}selected{% endif %}>Stock Asset Placeholder</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="notes" class="form-label fw-bold">Verification Notes & Shop Quotation Info</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2"
+                                    placeholder="e.g., Quoted by Banashree Automobiles on 23-Oct. Requires BS6 year check.">{{ product.notes if product and product.notes else '' }}</textarea>
                             </div>
                             <div class="col-12">
-                                <label for="image_url" class="form-label fw-bold">Image Filename</label>
-                                <input type="text" class="form-control" id="image_url" name="image_url"
-                                    value="{{ product.image_url if product else 'default.jpg' }}"
-                                    placeholder="e.g., product_name.png">
-                                <small class="text-muted">Place image file in static/products/ folder</small>
+                                <label for="specifications" class="form-label fw-bold">Specifications</label>
+                                <textarea class="form-control" id="specifications" name="specifications" rows="3"
+                                    placeholder="Format: Key: Value (one per line)">{{ product.specifications if product and product.specifications else '' }}</textarea>
+                                <small class="text-muted">Enter each specification on a new line as <strong>Key: Value</strong> (e.g., Material: Steel)</small>
                             </div>
                         </div>
 

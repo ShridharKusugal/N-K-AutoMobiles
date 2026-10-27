@@ -53,3 +53,6 @@ static/products/*
 !static/products/.gitkeep
 static/reviews/*
 !static/reviews/.gitkeep
+
+# Temporary scraper folders
+scripts/temp_*/

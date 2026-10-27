@@ -1,8 +1,7 @@
 """
 Test script to verify email validation is working correctly
 """
-from email_validator import validate_email, EmailNotValidError
-from email_validator.exceptions import EmailUndeliverableError
+from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError
 
 # Test 1: Valid email (should pass)
 print("Test 1: Valid email (gmail.com)")

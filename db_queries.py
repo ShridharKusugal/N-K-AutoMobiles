@@ -111,44 +111,61 @@ def get_categories():
     return categories
 
 
-def get_filtered_products(category_id=None, brands=None, min_price=None, max_price=None, sort_by=None):
+def get_filtered_products(category_id=None, brands=None, min_price=None, max_price=None, sort_by=None, vehicle_model=None, search_query=None):
     conn = get_db_connection()
     if not conn: return []
     cursor = conn.cursor(dictionary=True)
     
-    query = "SELECT * FROM products WHERE 1=1"
+    query = """
+        SELECT p.*, c.name AS category_name 
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        WHERE (p.is_active = 1 OR p.is_active IS NULL)
+    """
     params = []
     
     if category_id:
-        query += " AND category_id = %s"
+        query += " AND p.category_id = %s"
         params.append(category_id)
         
     if brands:
         if isinstance(brands, list):
             placeholders = ', '.join(['%s'] * len(brands))
-            query += f" AND brand IN ({placeholders})"
+            query += f" AND p.brand IN ({placeholders})"
             params.extend(brands)
         else:
-            query += " AND brand = %s"
+            query += " AND p.brand = %s"
             params.append(brands)
+
+    if vehicle_model:
+        query += """ AND p.product_id IN (
+            SELECT product_id FROM product_compatibility 
+            WHERE vehicle_model = %s OR vehicle_model LIKE %s
+        )"""
+        params.extend([vehicle_model, f"%{vehicle_model}%"])
+
+    if search_query:
+        term = f"%{search_query.strip()}%"
+        query += " AND (p.name LIKE %s OR p.description LIKE %s OR p.brand LIKE %s OR p.catalog_id LIKE %s OR p.part_number LIKE %s)"
+        params.extend([term, term, term, term, term])
             
     if min_price is not None:
-        query += " AND price >= %s"
+        query += " AND p.price >= %s"
         params.append(min_price)
         
     if max_price is not None:
-        query += " AND price <= %s"
+        query += " AND p.price <= %s"
         params.append(max_price)
 
     # Sorting logic
     if sort_by == 'price_low':
-        query += " ORDER BY price ASC"
+        query += " ORDER BY CASE WHEN p.price IS NULL OR p.price = 0 THEN 1 ELSE 0 END, p.price ASC"
     elif sort_by == 'price_high':
-        query += " ORDER BY price DESC"
+        query += " ORDER BY CASE WHEN p.price IS NULL OR p.price = 0 THEN 1 ELSE 0 END, p.price DESC"
     elif sort_by == 'newest':
-        query += " ORDER BY product_id DESC"
+        query += " ORDER BY p.product_id DESC"
     else:
-        query += " ORDER BY product_id DESC" # Default newest
+        query += " ORDER BY p.product_id DESC" # Default newest
         
     cursor.execute(query, tuple(params))
     products = cursor.fetchall()
@@ -166,15 +183,30 @@ def get_all_brands():
     conn.close()
     return brands
 
+def get_all_vehicle_models():
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT DISTINCT vehicle_model 
+        FROM product_compatibility 
+        WHERE vehicle_model IS NOT NULL AND vehicle_model != '' 
+        ORDER BY vehicle_model
+    """)
+    models = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    conn.close()
+    return models
+
 def get_price_range():
     conn = get_db_connection()
     if not conn: return 0, 100000
     cursor = conn.cursor()
-    cursor.execute("SELECT MIN(price), MAX(price) FROM products")
+    cursor.execute("SELECT MIN(price), MAX(price) FROM products WHERE price IS NOT NULL AND price > 0")
     result = cursor.fetchone()
-    min_p = result[0] if result[0] is not None else 0
+    min_p = result[0] if (result and result[0] is not None) else 0
     # Set a reasonable default max if database max is low, to allow broader filtering
-    db_max = result[1] if result[1] is not None else 0
+    db_max = result[1] if (result and result[1] is not None) else 0
     max_p = max(float(db_max), 10000.0) # Ensure at least 10000 for a better UI range
     
     # Round to nearest 1000 for cleaner UI
@@ -252,6 +284,15 @@ def get_product_details(product_id):
                         specs_dict[key.strip()] = value.strip()
             except: pass
         product['specs_parsed'] = specs_dict
+
+        # Fetch Motorcycle Compatibility
+        cursor.execute("""
+            SELECT vehicle_model, fitment_status, notes 
+            FROM product_compatibility 
+            WHERE product_id = %s 
+            ORDER BY vehicle_model
+        """, (product_id,))
+        product['compatibility_list'] = cursor.fetchall()
 
     cursor.close()
     conn.close()
@@ -894,6 +935,22 @@ def get_low_stock_products():
     conn.close()
     return products
 
+def get_admin_products_by_image_status(image_status):
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT p.*, c.name as category_name
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        WHERE p.image_status = %s
+        ORDER BY p.product_id ASC
+    """, (image_status,))
+    products = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return products
+
 def search_admin_products(query):
     conn = get_db_connection()
     if not conn: return []
@@ -903,9 +960,9 @@ def search_admin_products(query):
         SELECT p.*, c.name as category_name
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.category_id
-        WHERE p.name LIKE %s OR p.brand LIKE %s
+        WHERE p.name LIKE %s OR p.brand LIKE %s OR p.catalog_id LIKE %s OR p.part_number LIKE %s
         ORDER BY p.product_id DESC
-    """, (search_term, search_term))
+    """, (search_term, search_term, search_term, search_term))
     products = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -916,10 +973,28 @@ def add_product(data):
     if not conn: return False, "Connection error"
     cursor = conn.cursor()
     try:
+        price_val = None
+        if data.get('price') is not None and str(data.get('price')).strip() != '':
+            try: price_val = float(data['price'])
+            except: price_val = None
+
         cursor.execute("""
-            INSERT INTO products (name, brand, category_id, price, stock_quantity, description, specifications, image_url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (data['name'], data['brand'], data['category_id'], data['price'], data['stock_quantity'], data['description'], data['specifications'], data['image_url']))
+            INSERT INTO products (
+                catalog_id, name, brand, part_number, category_id, price, price_status,
+                stock_quantity, description, specifications, image_url, image_status,
+                image_source_url, image_source_page, image_source_type, image_rights_status,
+                fitment_status, notes
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            data.get('catalog_id') or None, data['name'], data.get('brand'), data.get('part_number'),
+            data['category_id'], price_val, data.get('price_status', 'VERIFIED_SELLING_PRICE'),
+            data.get('stock_quantity', 0), data.get('description'), data.get('specifications'),
+            data.get('image_url', 'default.jpg'), data.get('image_status', 'PLACEHOLDER_IMAGE'),
+            data.get('image_source_url'), data.get('image_source_page'), data.get('image_source_type'),
+            data.get('image_rights_status'), data.get('fitment_status', 'VERIFIED'),
+            data.get('notes')
+        ))
         conn.commit()
         return True, "Product added successfully"
     except Error as e:
@@ -933,10 +1008,26 @@ def update_product(product_id, data):
     if not conn: return False, "Connection error"
     cursor = conn.cursor()
     try:
+        price_val = None
+        if data.get('price') is not None and str(data.get('price')).strip() != '':
+            try: price_val = float(data['price'])
+            except: price_val = None
+
         cursor.execute("""
-            UPDATE products SET name=%s, brand=%s, category_id=%s, price=%s, 
-            stock_quantity=%s, description=%s, specifications=%s, image_url=%s WHERE product_id=%s
-        """, (data['name'], data['brand'], data['category_id'], data['price'], data['stock_quantity'], data['description'], data['specifications'], data['image_url'], product_id))
+            UPDATE products SET 
+                name=%s, brand=%s, part_number=%s, category_id=%s, price=%s, price_status=%s,
+                stock_quantity=%s, description=%s, specifications=%s, image_url=%s,
+                image_status=%s, image_source_url=%s, image_source_page=%s, image_source_type=%s,
+                image_rights_status=%s, fitment_status=%s, notes=%s
+            WHERE product_id=%s
+        """, (
+            data['name'], data.get('brand'), data.get('part_number'), data['category_id'], price_val,
+            data.get('price_status', 'VERIFIED_SELLING_PRICE'), data.get('stock_quantity', 0),
+            data.get('description'), data.get('specifications'), data.get('image_url'),
+            data.get('image_status', 'PLACEHOLDER_IMAGE'), data.get('image_source_url'),
+            data.get('image_source_page'), data.get('image_source_type'), data.get('image_rights_status'),
+            data.get('fitment_status', 'VERIFIED'), data.get('notes'), product_id
+        ))
         conn.commit()
         return True, "Product updated successfully"
     except Error as e:

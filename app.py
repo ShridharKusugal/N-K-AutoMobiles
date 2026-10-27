@@ -12,8 +12,7 @@ import uuid
 import csv
 import io
 import json
-from email_validator import validate_email, EmailNotValidError
-from email_validator.exceptions import EmailUndeliverableError
+from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError
 import random
 import string
 # import razorpay
@@ -43,6 +42,28 @@ mail = Mail(app)
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', 'your_key_id_here')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', 'your_key_secret_here')
 # razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+@app.context_processor
+def utility_processor():
+    def get_product_image_url(image_val):
+        if not image_val:
+            return url_for('static', filename='images/placeholder_part.svg')
+        clean_val = str(image_val).replace('\\', '/').strip()
+        # 1. Check under static/products/
+        p1 = os.path.join(app.static_folder, 'products', clean_val)
+        if os.path.exists(p1):
+            return url_for('static', filename='products/' + clean_val)
+        # 2. Check under static/images/products/
+        p2 = os.path.join(app.static_folder, 'images', 'products', clean_val)
+        if os.path.exists(p2):
+            return url_for('static', filename='images/products/' + clean_val)
+        # 3. Check directly under static/
+        p3 = os.path.join(app.static_folder, clean_val)
+        if os.path.exists(p3):
+            return url_for('static', filename=clean_val)
+        # Local fallback placeholder
+        return url_for('static', filename='images/placeholder_part.svg')
+    return dict(get_product_image_url=get_product_image_url)
 
 @app.before_request
 def load_guest_data():
@@ -191,25 +212,38 @@ def home():
     return render_template('home.html', products=products)
 
 @app.route('/products')
-
 def products():
     category_id = request.args.get('category')
     selected_brands = request.args.getlist('brand')
     min_price = request.args.get('min_price')
     max_price = request.args.get('max_price')
     sort_by = request.args.get('sort_by', 'newest')
+    vehicle_model = request.args.get('model')
+    search_query = request.args.get('q')
     
-    products = db_queries.get_filtered_products(category_id, selected_brands, min_price, max_price, sort_by)
+    products = db_queries.get_filtered_products(
+        category_id=category_id,
+        brands=selected_brands,
+        min_price=min_price,
+        max_price=max_price,
+        sort_by=sort_by,
+        vehicle_model=vehicle_model,
+        search_query=search_query
+    )
     
     categories = db_queries.get_categories()
     all_brands = db_queries.get_all_brands()
+    all_models = db_queries.get_all_vehicle_models()
     global_min, global_max = db_queries.get_price_range()
 
     return render_template('products.html', 
                           products=products, 
                           categories=categories,
                           all_brands=all_brands,
+                          all_models=all_models,
                           selected_brands=selected_brands,
+                          selected_model=vehicle_model,
+                          search_query=search_query,
                           min_price=int(min_price) if min_price else int(global_min),
                           max_price=int(max_price) if max_price else int(global_max),
                           global_min=int(global_min),
@@ -321,6 +355,11 @@ def add_to_cart(product_id):
     if not product:
         flash('Product not found.', 'danger')
         return redirect(url_for('home'))
+
+    # Check Verified Selling Price
+    if product['price'] is None or product['price'] <= 0 or product.get('price_status') == 'HUBBALLI_QUOTE_REQUIRED':
+        flash(f"'{product['name']}' requires a local shop quotation before purchase. Please contact us for pricing and availability.", 'warning')
+        return redirect(url_for('product_detail', product_id=product_id))
 
     # If GET, it's likely a redirect from guest login or buy now
     if request.method == 'GET':
@@ -1595,21 +1634,62 @@ def track_order():
 # ADMIN - PRODUCT MANAGEMENT
 # ==========================
 
+ALLOWED_IMAGE_EXTS = {'png', 'jpg', 'jpeg', 'webp'}
+
+def is_allowed_image(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTS
+
+def save_admin_uploaded_product_image(file_storage, catalog_id, product_name, category_id, categories):
+    if not file_storage or file_storage.filename == '':
+        return None
+    if not is_allowed_image(file_storage.filename):
+        return None
+    
+    ext = file_storage.filename.rsplit('.', 1)[1].lower()
+    cat_folder = 'General Spares'
+    for c in categories:
+        if str(c.get('category_id')) == str(category_id):
+            cat_folder = c.get('name', 'General Spares').replace(' ', '-')
+            break
+            
+    base_prefix = catalog_id if catalog_id else secure_filename(product_name.lower().replace(' ', '-'))
+    safe_name = f"{base_prefix}-{secure_filename(file_storage.filename)}"
+    if not safe_name.endswith(f".{ext}"):
+        safe_name = f"{safe_name}.{ext}"
+        
+    rel_path = f"motorcycle_parts/{cat_folder}/{safe_name}"
+    
+    dest_dirs = [
+        os.path.join(app.static_folder, 'images', 'products', 'motorcycle_parts', cat_folder),
+        os.path.join(app.static_folder, 'products', 'motorcycle_parts', cat_folder)
+    ]
+    for d in dest_dirs:
+        os.makedirs(d, exist_ok=True)
+        target_path = os.path.join(d, safe_name)
+        file_storage.seek(0)
+        file_storage.save(target_path)
+        
+    return rel_path
+
 @app.route('/admin/products')
 @login_required
 @admin_required
 def admin_products():
     filter_type = request.args.get('filter')
+    image_status_filter = request.args.get('image_status')
     search_query = request.args.get('q', '').strip()
     
     if search_query:
         products = db_queries.search_admin_products(search_query)
+    elif image_status_filter:
+        products = db_queries.get_admin_products_by_image_status(image_status_filter)
     elif filter_type == 'low_stock':
         products = db_queries.get_low_stock_products()
     else:
         products = db_queries.get_admin_products()
         
-    return render_template('admin/products.html', products=products, filter_type=filter_type, search_query=search_query)
+    return render_template('admin/products.html', products=products, filter_type=filter_type, 
+                           image_status_filter=image_status_filter, search_query=search_query)
 
 @app.route('/admin/products/add', methods=['GET', 'POST'])
 @login_required
@@ -1618,15 +1698,42 @@ def admin_add_product():
     categories = db_queries.get_categories()
         
     if request.method == 'POST':
+        img_url = request.form.get('image_url', 'placeholder_part.svg')
+        img_status = request.form.get('image_status', 'PLACEHOLDER_IMAGE')
+        
+        # Handle file upload if provided
+        uploaded_file = request.files.get('image_file')
+        if uploaded_file and uploaded_file.filename != '':
+            saved_rel = save_admin_uploaded_product_image(
+                uploaded_file,
+                request.form.get('catalog_id'),
+                request.form.get('name', 'product'),
+                request.form.get('category_id'),
+                categories
+            )
+            if saved_rel:
+                img_url = saved_rel
+                img_status = 'VERIFIED_PRODUCT_IMAGE'
+
         data = {
+            'catalog_id': request.form.get('catalog_id'),
             'name': request.form.get('name'),
             'brand': request.form.get('brand'),
+            'part_number': request.form.get('part_number'),
             'category_id': request.form.get('category_id'),
             'price': request.form.get('price'),
-            'stock_quantity': request.form.get('stock_quantity'),
+            'price_status': request.form.get('price_status', 'VERIFIED_SELLING_PRICE'),
+            'stock_quantity': request.form.get('stock_quantity', 0),
             'description': request.form.get('description'),
             'specifications': request.form.get('specifications'),
-            'image_url': request.form.get('image_url', 'default.jpg')
+            'image_url': img_url,
+            'image_status': img_status,
+            'image_source_url': request.form.get('image_source_url'),
+            'image_source_page': request.form.get('image_source_page'),
+            'image_source_type': request.form.get('image_source_type'),
+            'image_rights_status': request.form.get('image_rights_status'),
+            'fitment_status': request.form.get('fitment_status', 'VERIFIED'),
+            'notes': request.form.get('notes')
         }
         
         success, message = db_queries.add_product(data)
@@ -1648,15 +1755,42 @@ def admin_edit_product(product_id):
     categories = db_queries.get_categories()
 
     if request.method == 'POST':
+        img_url = request.form.get('image_url', product['image_url'] if product else 'placeholder_part.svg')
+        img_status = request.form.get('image_status', product.get('image_status', 'PLACEHOLDER_IMAGE') if product else 'PLACEHOLDER_IMAGE')
+        
+        # Handle file upload if provided
+        uploaded_file = request.files.get('image_file')
+        if uploaded_file and uploaded_file.filename != '':
+            saved_rel = save_admin_uploaded_product_image(
+                uploaded_file,
+                request.form.get('catalog_id') or (product.get('catalog_id') if product else None),
+                request.form.get('name', 'product'),
+                request.form.get('category_id'),
+                categories
+            )
+            if saved_rel:
+                img_url = saved_rel
+                img_status = 'VERIFIED_PRODUCT_IMAGE'
+
         data = {
+            'catalog_id': request.form.get('catalog_id'),
             'name': request.form.get('name'),
             'brand': request.form.get('brand'),
+            'part_number': request.form.get('part_number'),
             'category_id': request.form.get('category_id'),
             'price': request.form.get('price'),
-            'stock_quantity': request.form.get('stock_quantity'),
+            'price_status': request.form.get('price_status', 'VERIFIED_SELLING_PRICE'),
+            'stock_quantity': request.form.get('stock_quantity', 0),
             'description': request.form.get('description'),
             'specifications': request.form.get('specifications'),
-            'image_url': request.form.get('image_url')
+            'image_url': img_url,
+            'image_status': img_status,
+            'image_source_url': request.form.get('image_source_url'),
+            'image_source_page': request.form.get('image_source_page'),
+            'image_source_type': request.form.get('image_source_type'),
+            'image_rights_status': request.form.get('image_rights_status'),
+            'fitment_status': request.form.get('fitment_status', 'VERIFIED'),
+            'notes': request.form.get('notes')
         }
         
         success, message = db_queries.update_product(product_id, data)

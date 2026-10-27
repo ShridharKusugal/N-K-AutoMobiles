@@ -1,0 +1,907 @@
+[
+  {
+    "product_id": 1,
+    "catalog_id": null,
+    "name": "Honda Shine Piston Kit"
+  },
+  {
+    "product_id": 2,
+    "catalog_id": null,
+    "name": "Bajaj Pulsar Brake Pads"
+  },
+  {
+    "product_id": 3,
+    "catalog_id": null,
+    "name": "TVS Jupiter Battery"
+  },
+  {
+    "product_id": 4,
+    "catalog_id": null,
+    "name": "Yamaha R15 Chain Sprocket Kit"
+  },
+  {
+    "product_id": 5,
+    "catalog_id": null,
+    "name": "Hero Splendor Air Filter"
+  },
+  {
+    "product_id": 6,
+    "catalog_id": null,
+    "name": "Royal Enfield Leg Guard"
+  },
+  {
+    "product_id": 7,
+    "catalog_id": null,
+    "name": "Activa 6G Headlight Assembly"
+  },
+  {
+    "product_id": 8,
+    "catalog_id": null,
+    "name": "ktm Duke 200 Indicator"
+  },
+  {
+    "product_id": 9,
+    "catalog_id": null,
+    "name": "Apache RTR 160 Mirror Set"
+  },
+  {
+    "product_id": 10,
+    "catalog_id": null,
+    "name": "Fazer V2 Front Mudguard"
+  },
+  {
+    "product_id": 11,
+    "catalog_id": null,
+    "name": "Motorcycle Riding Gloves"
+  },
+  {
+    "product_id": 12,
+    "catalog_id": null,
+    "name": "Performance Clutch Plate Set"
+  },
+  {
+    "product_id": 13,
+    "catalog_id": null,
+    "name": "LED Fog Light Kit"
+  },
+  {
+    "product_id": 14,
+    "catalog_id": null,
+    "name": "Stainless Steel Exhaust System"
+  },
+  {
+    "product_id": 15,
+    "catalog_id": null,
+    "name": "Digital Instrument Cluster"
+  },
+  {
+    "product_id": 16,
+    "catalog_id": null,
+    "name": "Premium Seat Cover"
+  },
+  {
+    "product_id": 17,
+    "catalog_id": null,
+    "name": "Disc Brake Rotor 300mm"
+  },
+  {
+    "product_id": 18,
+    "catalog_id": null,
+    "name": "High-Flow Oil Filter"
+  },
+  {
+    "product_id": 19,
+    "catalog_id": null,
+    "name": "Adjustable Brake/Clutch Levers"
+  },
+  {
+    "product_id": 20,
+    "catalog_id": null,
+    "name": "Heavy Duty Drive Chain"
+  },
+  {
+    "product_id": 21,
+    "catalog_id": null,
+    "name": "Side Box Luggage Set"
+  },
+  {
+    "product_id": 22,
+    "catalog_id": "NK-001",
+    "name": "Spark plug"
+  },
+  {
+    "product_id": 23,
+    "catalog_id": "NK-002",
+    "name": "Engine oil (motorcycle grade)"
+  },
+  {
+    "product_id": 24,
+    "catalog_id": "NK-003",
+    "name": "Clutch cable"
+  },
+  {
+    "product_id": 25,
+    "catalog_id": "NK-004",
+    "name": "Throttle cable"
+  },
+  {
+    "product_id": 26,
+    "catalog_id": "NK-005",
+    "name": "Speedometer cable"
+  },
+  {
+    "product_id": 27,
+    "catalog_id": "NK-006",
+    "name": "Front wheel bearing set"
+  },
+  {
+    "product_id": 28,
+    "catalog_id": "NK-007",
+    "name": "Rear wheel bearing set"
+  },
+  {
+    "product_id": 29,
+    "catalog_id": "NK-008",
+    "name": "Fork oil seal set"
+  },
+  {
+    "product_id": 30,
+    "catalog_id": "NK-009",
+    "name": "Clutch friction plate set"
+  },
+  {
+    "product_id": 31,
+    "catalog_id": "NK-010",
+    "name": "Gasket set"
+  },
+  {
+    "product_id": 32,
+    "catalog_id": "NK-011",
+    "name": "Fuel hose"
+  },
+  {
+    "product_id": 33,
+    "catalog_id": "NK-012",
+    "name": "Rubber footrest grip"
+  },
+  {
+    "product_id": 34,
+    "catalog_id": "NK-013",
+    "name": "Side-stand rubber"
+  },
+  {
+    "product_id": 35,
+    "catalog_id": "NK-014",
+    "name": "Number-plate lamp"
+  },
+  {
+    "product_id": 36,
+    "catalog_id": "NK-015",
+    "name": "Horn (12 V)"
+  },
+  {
+    "product_id": 37,
+    "catalog_id": "NK-016",
+    "name": "Battery (12 V)"
+  },
+  {
+    "product_id": 38,
+    "catalog_id": "NK-017",
+    "name": "Tubeless tyre valve"
+  },
+  {
+    "product_id": 39,
+    "catalog_id": "NK-018",
+    "name": "Inner tube"
+  },
+  {
+    "product_id": 40,
+    "catalog_id": "NK-019",
+    "name": "Wheel spoke set"
+  },
+  {
+    "product_id": 41,
+    "catalog_id": "NK-020",
+    "name": "Tool-kit pouch"
+  },
+  {
+    "product_id": 42,
+    "catalog_id": "NK-021",
+    "name": "Piston assembly"
+  },
+  {
+    "product_id": 43,
+    "catalog_id": "NK-022",
+    "name": "Cylinder block / barrel"
+  },
+  {
+    "product_id": 44,
+    "catalog_id": "NK-023",
+    "name": "Piston ring set"
+  },
+  {
+    "product_id": 45,
+    "catalog_id": "NK-024",
+    "name": "Connecting rod"
+  },
+  {
+    "product_id": 46,
+    "catalog_id": "NK-025",
+    "name": "Crankshaft assembly"
+  },
+  {
+    "product_id": 47,
+    "catalog_id": "NK-026",
+    "name": "Inlet valve"
+  },
+  {
+    "product_id": 48,
+    "catalog_id": "NK-027",
+    "name": "Exhaust valve"
+  },
+  {
+    "product_id": 49,
+    "catalog_id": "NK-028",
+    "name": "Valve spring set"
+  },
+  {
+    "product_id": 50,
+    "catalog_id": "NK-029",
+    "name": "Camshaft"
+  },
+  {
+    "product_id": 51,
+    "catalog_id": "NK-030",
+    "name": "Rocker arm set"
+  },
+  {
+    "product_id": 52,
+    "catalog_id": "NK-031",
+    "name": "Timing chain"
+  },
+  {
+    "product_id": 53,
+    "catalog_id": "NK-032",
+    "name": "Oil pump assembly"
+  },
+  {
+    "product_id": 54,
+    "catalog_id": "NK-033",
+    "name": "Oil pump drive gear"
+  },
+  {
+    "product_id": 55,
+    "catalog_id": "NK-034",
+    "name": "Clutch basket / outer"
+  },
+  {
+    "product_id": 56,
+    "catalog_id": "NK-035",
+    "name": "Clutch hub / inner"
+  },
+  {
+    "product_id": 57,
+    "catalog_id": "NK-036",
+    "name": "Clutch friction plate set"
+  },
+  {
+    "product_id": 58,
+    "catalog_id": "NK-037",
+    "name": "Clutch steel plate set"
+  },
+  {
+    "product_id": 59,
+    "catalog_id": "NK-038",
+    "name": "Gear shift shaft"
+  },
+  {
+    "product_id": 60,
+    "catalog_id": "NK-039",
+    "name": "Crankcase gasket"
+  },
+  {
+    "product_id": 61,
+    "catalog_id": "NK-040",
+    "name": "Cylinder head gasket"
+  },
+  {
+    "product_id": 62,
+    "catalog_id": "NK-041",
+    "name": "Front disc brake pad set"
+  },
+  {
+    "product_id": 63,
+    "catalog_id": "NK-042",
+    "name": "Rear disc brake pad set"
+  },
+  {
+    "product_id": 64,
+    "catalog_id": "NK-043",
+    "name": "Front brake shoe set"
+  },
+  {
+    "product_id": 65,
+    "catalog_id": "NK-044",
+    "name": "Rear brake shoe set"
+  },
+  {
+    "product_id": 66,
+    "catalog_id": "NK-045",
+    "name": "Front brake disc rotor"
+  },
+  {
+    "product_id": 67,
+    "catalog_id": "NK-046",
+    "name": "Rear brake disc rotor"
+  },
+  {
+    "product_id": 68,
+    "catalog_id": "NK-047",
+    "name": "Front brake lever"
+  },
+  {
+    "product_id": 69,
+    "catalog_id": "NK-048",
+    "name": "Rear brake pedal"
+  },
+  {
+    "product_id": 70,
+    "catalog_id": "NK-049",
+    "name": "Front brake master cylinder"
+  },
+  {
+    "product_id": 71,
+    "catalog_id": "NK-050",
+    "name": "Front brake hose"
+  },
+  {
+    "product_id": 72,
+    "catalog_id": "NK-051",
+    "name": "Rear brake cable"
+  },
+  {
+    "product_id": 73,
+    "catalog_id": "NK-052",
+    "name": "Brake light switch (front)"
+  },
+  {
+    "product_id": 74,
+    "catalog_id": "NK-053",
+    "name": "Brake light switch (rear)"
+  },
+  {
+    "product_id": 75,
+    "catalog_id": "NK-054",
+    "name": "Brake caliper assembly"
+  },
+  {
+    "product_id": 76,
+    "catalog_id": "NK-055",
+    "name": "Caliper seal kit"
+  },
+  {
+    "product_id": 77,
+    "catalog_id": "NK-056",
+    "name": "Brake master-cylinder seal kit"
+  },
+  {
+    "product_id": 78,
+    "catalog_id": "NK-057",
+    "name": "Brake fluid DOT specification"
+  },
+  {
+    "product_id": 79,
+    "catalog_id": "NK-058",
+    "name": "Brake drum"
+  },
+  {
+    "product_id": 80,
+    "catalog_id": "NK-059",
+    "name": "Brake cam / spindle"
+  },
+  {
+    "product_id": 81,
+    "catalog_id": "NK-060",
+    "name": "Brake return spring set"
+  },
+  {
+    "product_id": 82,
+    "catalog_id": "NK-061",
+    "name": "Ignition coil"
+  },
+  {
+    "product_id": 83,
+    "catalog_id": "NK-062",
+    "name": "Spark plug cap"
+  },
+  {
+    "product_id": 84,
+    "catalog_id": "NK-063",
+    "name": "Regulator-rectifier"
+  },
+  {
+    "product_id": 85,
+    "catalog_id": "NK-064",
+    "name": "Starter motor assembly"
+  },
+  {
+    "product_id": 86,
+    "catalog_id": "NK-065",
+    "name": "Starter relay / solenoid"
+  },
+  {
+    "product_id": 87,
+    "catalog_id": "NK-066",
+    "name": "Wiring harness"
+  },
+  {
+    "product_id": 88,
+    "catalog_id": "NK-067",
+    "name": "Headlamp assembly"
+  },
+  {
+    "product_id": 89,
+    "catalog_id": "NK-068",
+    "name": "Headlamp bulb"
+  },
+  {
+    "product_id": 90,
+    "catalog_id": "NK-069",
+    "name": "Front indicator lamp (left)"
+  },
+  {
+    "product_id": 91,
+    "catalog_id": "NK-070",
+    "name": "Front indicator lamp (right)"
+  },
+  {
+    "product_id": 92,
+    "catalog_id": "NK-071",
+    "name": "Rear indicator lamp set"
+  },
+  {
+    "product_id": 93,
+    "catalog_id": "NK-072",
+    "name": "Tail lamp assembly"
+  },
+  {
+    "product_id": 94,
+    "catalog_id": "NK-073",
+    "name": "Horn switch"
+  },
+  {
+    "product_id": 95,
+    "catalog_id": "NK-074",
+    "name": "Starter switch"
+  },
+  {
+    "product_id": 96,
+    "catalog_id": "NK-075",
+    "name": "Ignition switch / lock set"
+  },
+  {
+    "product_id": 97,
+    "catalog_id": "NK-076",
+    "name": "Battery 12 V"
+  },
+  {
+    "product_id": 98,
+    "catalog_id": "NK-077",
+    "name": "Battery terminal cable set"
+  },
+  {
+    "product_id": 99,
+    "catalog_id": "NK-078",
+    "name": "Flasher relay"
+  },
+  {
+    "product_id": 100,
+    "catalog_id": "NK-079",
+    "name": "Side-stand switch"
+  },
+  {
+    "product_id": 101,
+    "catalog_id": "NK-080",
+    "name": "Speed sensor"
+  },
+  {
+    "product_id": 102,
+    "catalog_id": "NK-081",
+    "name": "Front mudguard / fender"
+  },
+  {
+    "product_id": 103,
+    "catalog_id": "NK-082",
+    "name": "Rear mudguard"
+  },
+  {
+    "product_id": 104,
+    "catalog_id": "NK-083",
+    "name": "Headlamp cowl"
+  },
+  {
+    "product_id": 105,
+    "catalog_id": "NK-084",
+    "name": "Left side panel"
+  },
+  {
+    "product_id": 106,
+    "catalog_id": "NK-085",
+    "name": "Right side panel"
+  },
+  {
+    "product_id": 107,
+    "catalog_id": "NK-086",
+    "name": "Fuel tank assembly"
+  },
+  {
+    "product_id": 108,
+    "catalog_id": "NK-087",
+    "name": "Fuel tank side cover (left)"
+  },
+  {
+    "product_id": 109,
+    "catalog_id": "NK-088",
+    "name": "Fuel tank side cover (right)"
+  },
+  {
+    "product_id": 110,
+    "catalog_id": "NK-089",
+    "name": "Tail cowl / rear cover"
+  },
+  {
+    "product_id": 111,
+    "catalog_id": "NK-090",
+    "name": "Seat assembly"
+  },
+  {
+    "product_id": 112,
+    "catalog_id": "NK-091",
+    "name": "Seat cover"
+  },
+  {
+    "product_id": 113,
+    "catalog_id": "NK-092",
+    "name": "Side stand assembly"
+  },
+  {
+    "product_id": 114,
+    "catalog_id": "NK-093",
+    "name": "Centre stand assembly"
+  },
+  {
+    "product_id": 115,
+    "catalog_id": "NK-094",
+    "name": "Chain cover / guard"
+  },
+  {
+    "product_id": 116,
+    "catalog_id": "NK-095",
+    "name": "Front number-plate bracket"
+  },
+  {
+    "product_id": 117,
+    "catalog_id": "NK-096",
+    "name": "Rear number-plate holder"
+  },
+  {
+    "product_id": 118,
+    "catalog_id": "NK-097",
+    "name": "Battery side cover"
+  },
+  {
+    "product_id": 119,
+    "catalog_id": "NK-098",
+    "name": "Airbox cover"
+  },
+  {
+    "product_id": 120,
+    "catalog_id": "NK-099",
+    "name": "Exhaust heat shield"
+  },
+  {
+    "product_id": 121,
+    "catalog_id": "NK-100",
+    "name": "Grab rail / pillion handle"
+  },
+  {
+    "product_id": 122,
+    "catalog_id": "NK-101",
+    "name": "Drive chain set"
+  },
+  {
+    "product_id": 123,
+    "catalog_id": "NK-102",
+    "name": "Front drive sprocket"
+  },
+  {
+    "product_id": 124,
+    "catalog_id": "NK-103",
+    "name": "Rear driven sprocket"
+  },
+  {
+    "product_id": 125,
+    "catalog_id": "NK-104",
+    "name": "Chain and sprocket kit"
+  },
+  {
+    "product_id": 126,
+    "catalog_id": "NK-105",
+    "name": "Chain master link"
+  },
+  {
+    "product_id": 127,
+    "catalog_id": "NK-106",
+    "name": "Chain slider"
+  },
+  {
+    "product_id": 128,
+    "catalog_id": "NK-107",
+    "name": "Chain guide"
+  },
+  {
+    "product_id": 129,
+    "catalog_id": "NK-108",
+    "name": "Chain adjuster set"
+  },
+  {
+    "product_id": 130,
+    "catalog_id": "NK-109",
+    "name": "Front sprocket lock plate"
+  },
+  {
+    "product_id": 131,
+    "catalog_id": "NK-110",
+    "name": "Front sprocket nut"
+  },
+  {
+    "product_id": 132,
+    "catalog_id": "NK-111",
+    "name": "Rear sprocket bolt set"
+  },
+  {
+    "product_id": 133,
+    "catalog_id": "NK-112",
+    "name": "Rear sprocket carrier"
+  },
+  {
+    "product_id": 134,
+    "catalog_id": "NK-113",
+    "name": "Cush-drive rubber set"
+  },
+  {
+    "product_id": 135,
+    "catalog_id": "NK-114",
+    "name": "Chain roller"
+  },
+  {
+    "product_id": 136,
+    "catalog_id": "NK-115",
+    "name": "Chain lubricant"
+  },
+  {
+    "product_id": 137,
+    "catalog_id": "NK-116",
+    "name": "Chain cleaning brush"
+  },
+  {
+    "product_id": 138,
+    "catalog_id": "NK-117",
+    "name": "Chain guard fastener set"
+  },
+  {
+    "product_id": 139,
+    "catalog_id": "NK-118",
+    "name": "Rear axle spacer"
+  },
+  {
+    "product_id": 140,
+    "catalog_id": "NK-119",
+    "name": "Rear wheel sprocket flange"
+  },
+  {
+    "product_id": 141,
+    "catalog_id": "NK-120",
+    "name": "Chain wear gauge"
+  },
+  {
+    "product_id": 142,
+    "catalog_id": "NK-121",
+    "name": "Engine oil filter element"
+  },
+  {
+    "product_id": 143,
+    "catalog_id": "NK-122",
+    "name": "Spin-on oil filter"
+  },
+  {
+    "product_id": 144,
+    "catalog_id": "NK-123",
+    "name": "Air filter element"
+  },
+  {
+    "product_id": 145,
+    "catalog_id": "NK-124",
+    "name": "Foam air filter"
+  },
+  {
+    "product_id": 146,
+    "catalog_id": "NK-125",
+    "name": "Paper air filter"
+  },
+  {
+    "product_id": 147,
+    "catalog_id": "NK-126",
+    "name": "Fuel filter"
+  },
+  {
+    "product_id": 148,
+    "catalog_id": "NK-127",
+    "name": "Fuel pump strainer"
+  },
+  {
+    "product_id": 149,
+    "catalog_id": "NK-128",
+    "name": "Oil strainer screen"
+  },
+  {
+    "product_id": 150,
+    "catalog_id": "NK-129",
+    "name": "Airbox sealing gasket"
+  },
+  {
+    "product_id": 151,
+    "catalog_id": "NK-130",
+    "name": "Air filter cover gasket"
+  },
+  {
+    "product_id": 152,
+    "catalog_id": "NK-131",
+    "name": "Breather filter"
+  },
+  {
+    "product_id": 153,
+    "catalog_id": "NK-132",
+    "name": "CVT air filter (scooter)"
+  },
+  {
+    "product_id": 154,
+    "catalog_id": "NK-133",
+    "name": "CVT case filter sponge"
+  },
+  {
+    "product_id": 155,
+    "catalog_id": "NK-134",
+    "name": "Fuel pump filter sock"
+  },
+  {
+    "product_id": 156,
+    "catalog_id": "NK-135",
+    "name": "Oil filter O-ring"
+  },
+  {
+    "product_id": 157,
+    "catalog_id": "NK-136",
+    "name": "Airbox drain plug"
+  },
+  {
+    "product_id": 158,
+    "catalog_id": "NK-137",
+    "name": "Airbox drain tube"
+  },
+  {
+    "product_id": 159,
+    "catalog_id": "NK-138",
+    "name": "Oil filter cover"
+  },
+  {
+    "product_id": 160,
+    "catalog_id": "NK-139",
+    "name": "Filter retaining spring"
+  },
+  {
+    "product_id": 161,
+    "catalog_id": "NK-140",
+    "name": "Filter maintenance kit"
+  },
+  {
+    "product_id": 162,
+    "catalog_id": "NK-141",
+    "name": "Rear-view mirror (left)"
+  },
+  {
+    "product_id": 163,
+    "catalog_id": "NK-142",
+    "name": "Rear-view mirror (right)"
+  },
+  {
+    "product_id": 164,
+    "catalog_id": "NK-143",
+    "name": "Handlebar grip set"
+  },
+  {
+    "product_id": 165,
+    "catalog_id": "NK-144",
+    "name": "Clutch lever"
+  },
+  {
+    "product_id": 166,
+    "catalog_id": "NK-145",
+    "name": "Front brake lever"
+  },
+  {
+    "product_id": 167,
+    "catalog_id": "NK-146",
+    "name": "Bar-end weight set"
+  },
+  {
+    "product_id": 168,
+    "catalog_id": "NK-147",
+    "name": "Phone holder"
+  },
+  {
+    "product_id": 169,
+    "catalog_id": "NK-148",
+    "name": "USB charging socket"
+  },
+  {
+    "product_id": 170,
+    "catalog_id": "NK-149",
+    "name": "Crash guard / engine guard"
+  },
+  {
+    "product_id": 171,
+    "catalog_id": "NK-150",
+    "name": "Leg guard"
+  },
+  {
+    "product_id": 172,
+    "catalog_id": "NK-151",
+    "name": "Tank pad"
+  },
+  {
+    "product_id": 173,
+    "catalog_id": "NK-152",
+    "name": "Seat cover accessory"
+  },
+  {
+    "product_id": 174,
+    "catalog_id": "NK-153",
+    "name": "Luggage bungee net"
+  },
+  {
+    "product_id": 175,
+    "catalog_id": "NK-154",
+    "name": "Helmet lock"
+  },
+  {
+    "product_id": 176,
+    "catalog_id": "NK-155",
+    "name": "Auxiliary LED lamp set"
+  },
+  {
+    "product_id": 177,
+    "catalog_id": "NK-156",
+    "name": "Reflective rim tape"
+  },
+  {
+    "product_id": 178,
+    "catalog_id": "NK-157",
+    "name": "Footrest rubber set"
+  },
+  {
+    "product_id": 179,
+    "catalog_id": "NK-158",
+    "name": "Pillion footrest assembly"
+  },
+  {
+    "product_id": 180,
+    "catalog_id": "NK-159",
+    "name": "Handlebar riser set"
+  },
+  {
+    "product_id": 181,
+    "catalog_id": "NK-160",
+    "name": "Windscreen / visor"
+  }
+]

@@ -74,7 +74,7 @@
                             <div class="col-12">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="subject" name="subject"
-                                        placeholder="Subject" required>
+                                        value="{{ request.args.get('subject', '') }}" placeholder="Subject" required>
                                     <label for="subject">Subject</label>
                                 </div>
                             </div>

@@ -4,18 +4,24 @@
 
 {% block content %}
 <div class="container py-5">
-    <div class="row align-items-center mb-4">
+    <div class="row align-items-center mb-3">
         <div class="col-lg-5">
             <h2 class="fw-bold mb-1"><i class="fas fa-box-open me-2"></i>Product Management</h2>
             <div class="d-flex align-items-center gap-2 mt-2">
                 {% if filter_type == 'low_stock' %}
-                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i> Low
-                    Stock</span>
+                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i> Low Stock</span>
+                {% elif filter_type == 'verified_images' %}
+                <span class="badge bg-success"><i class="fas fa-camera me-1"></i> Verified Photos</span>
+                {% elif filter_type == 'placeholders' %}
+                <span class="badge bg-secondary"><i class="fas fa-paint-brush me-1"></i> Placeholders</span>
+                {% elif filter_type == 'needs_review' %}
+                <span class="badge bg-warning text-dark"><i class="fas fa-search me-1"></i> Needs Review</span>
                 {% endif %}
                 {% if search_query %}
-                <span class="badge bg-info text-dark"><i class="fas fa-search me-1"></i> Search: "{{ search_query
-                    }}"</span>
-                <a href="{{ url_for('admin_products') }}" class="small text-decoration-none">Clear</a>
+                <span class="badge bg-info text-dark"><i class="fas fa-search me-1"></i> Search: "{{ search_query }}"</span>
+                {% endif %}
+                {% if filter_type or search_query %}
+                <a href="{{ url_for('admin_products') }}" class="small text-decoration-none">Clear Filters</a>
                 {% endif %}
             </div>
         </div>
@@ -23,7 +29,7 @@
             <form action="{{ url_for('admin_products') }}" method="GET" class="d-flex">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control rounded-start-pill"
-                        placeholder="Search name or brand..." value="{{ search_query or '' }}">
+                        placeholder="Search name, brand, SKU..." value="{{ search_query or '' }}">
                     <button class="btn btn-primary rounded-end-pill px-3" type="submit">
                         <i class="fas fa-search"></i>
                     </button>
@@ -43,17 +49,37 @@
         </div>
     </div>
 
+    <!-- Filter Quick Tabs -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{{ url_for('admin_products') }}" class="btn btn-sm {% if not filter_type %}btn-dark{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+            All Products
+        </a>
+        <a href="{{ url_for('admin_products', filter='verified_images') }}" class="btn btn-sm {% if filter_type == 'verified_images' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3">
+            <i class="fas fa-check-circle me-1"></i>Verified Photos
+        </a>
+        <a href="{{ url_for('admin_products', filter='needs_review') }}" class="btn btn-sm {% if filter_type == 'needs_review' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %} rounded-pill px-3">
+            <i class="fas fa-exclamation-triangle me-1"></i>Needs Review
+        </a>
+        <a href="{{ url_for('admin_products', filter='placeholders') }}" class="btn btn-sm {% if filter_type == 'placeholders' %}btn-secondary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+            <i class="fas fa-image me-1"></i>Placeholders
+        </a>
+        <a href="{{ url_for('admin_products', filter='low_stock') }}" class="btn btn-sm {% if filter_type == 'low_stock' %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-3">
+            <i class="fas fa-cubes me-1"></i>Low Stock
+        </a>
+    </div>
+
     <!-- Products Table -->
     <div class="card border-0 shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Image</th>
+                        <th>ID / Code</th>
+                        <th>Photo</th>
                         <th>Name</th>
-                        <th>Brand</th>
+                        <th>Brand / Part #</th>
                         <th>Category</th>
+                        <th>Image Status</th>
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Actions</th>
@@ -62,23 +88,58 @@
                 <tbody>
                     {% for product in products %}
                     <tr>
-                        <td>{{ product.product_id }}</td>
                         <td>
-                            <img src="{{ url_for('static', filename='products/' + product.image_url) }}" class="rounded"
-                                style="width: 50px; height: 50px; object-fit: cover;"
+                            <strong>#{{ product.product_id }}</strong>
+                            {% if product.catalog_id %}
+                            <br><span class="badge bg-light text-dark border">{{ product.catalog_id }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <img src="{{ get_product_image_url(product.image_url) }}" class="rounded border p-1"
+                                style="width: 52px; height: 52px; object-fit: contain; background: #fff;"
                                 onerror="handleImageError(this, '{{ product.name }}')">
                         </td>
-                        <td><strong>{{ product.name }}</strong></td>
-                        <td>{{ product.brand }}</td>
+                        <td>
+                            <strong>{{ product.name }}</strong>
+                        </td>
+                        <td>
+                            {{ product.brand or 'N/A' }}
+                            {% if product.part_number %}
+                            <br><small class="text-muted">PN: {{ product.part_number }}</small>
+                            {% endif %}
+                        </td>
                         <td><span class="badge bg-secondary">{{ product.category_name or 'N/A' }}</span></td>
-                        <td class="text-success fw-bold">₹{{ product.price }}</td>
+                        <td>
+                            {% if product.image_status == 'VERIFIED_PRODUCT_IMAGE' %}
+                            <span class="badge bg-success" style="font-size: 0.7rem;"><i class="fas fa-check-circle me-1"></i>Verified Photo</span>
+                            {% elif product.image_status == 'IMAGE_FOUND_NEEDS_MANUAL_REVIEW' %}
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="fas fa-search me-1"></i>Needs Review</span>
+                            {% else %}
+                            <span class="badge bg-secondary" style="font-size: 0.7rem;"><i class="fas fa-camera me-1"></i>Placeholder</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if product.price %}
+                            <span class="text-success fw-bold">₹{{ product.price }}</span>
+                            <br>
+                            {% if product.price_status == 'VERIFIED_SELLING_PRICE' %}
+                            <small class="badge bg-success" style="font-size: 0.6rem;">Verified</small>
+                            {% elif product.price_status == 'ONLINE_LISTING_PRICE_NOT_HUBBALLI_VERIFIED' %}
+                            <small class="badge bg-info text-dark" style="font-size: 0.6rem;">Online Ref</small>
+                            {% else %}
+                            <small class="badge bg-warning text-dark" style="font-size: 0.6rem;">Quote Req</small>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted fst-italic">Quote Req</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if product.stock_quantity > 10 %}
                             <span class="badge bg-success">{{ product.stock_quantity }}</span>
                             {% elif product.stock_quantity > 0 %}
                             <span class="badge bg-warning text-dark">{{ product.stock_quantity }}</span>
                             {% else %}
-                            <span class="badge bg-danger">Out of Stock</span>
+                            <span class="badge bg-secondary">0 / Unchecked</span>
                             {% endif %}
                         </td>
                         <td>
@@ -99,7 +160,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <i class="fas fa-box-open fa-3x mb-3"></i>
                             <p>No products found.</p>
                             <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary">Add First Product</a>
